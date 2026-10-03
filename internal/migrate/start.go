@@ -115,7 +115,14 @@ func preparePostgres(ctx context.Context, e Env, p *Plan, apply bool) error {
 		return fmt.Errorf("postgres wal_level is %q; run ALTER SYSTEM SET wal_level = logical; then restart Postgres", wal)
 	}
 	if keep == "-1" {
-		fmt.Fprintln(e.Log, "warning: max_slot_wal_keep_size is unlimited: a stalled mirror can fill the Postgres disk (set e.g. ALTER SYSTEM SET max_slot_wal_keep_size = '50GB')")
+		// RDS/Aurora forbid ALTER SYSTEM; their settings live in the DB parameter group.
+		var rds bool
+		_ = conn.QueryRow(ctx, "SELECT current_setting('rds.logical_replication', true) IS NOT NULL").Scan(&rds)
+		how := "ALTER SYSTEM SET max_slot_wal_keep_size = '50GB'; SELECT pg_reload_conf()"
+		if rds {
+			how = "set max_slot_wal_keep_size in the DB parameter group (RDS/Aurora do not allow ALTER SYSTEM)"
+		}
+		fmt.Fprintf(e.Log, "warning: max_slot_wal_keep_size is unlimited: a stalled mirror can fill the Postgres disk (%s)\n", how)
 	}
 	var missing []string
 	for _, fix := range p.PostgresFixes {

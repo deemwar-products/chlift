@@ -72,13 +72,23 @@ Grafana dashboard is in `deploy/grafana/`.
 - Postgres 12+ with `wal_level=logical`. Set `max_slot_wal_keep_size`, so a stalled mirror can't fill the disk.
 - ClickHouse from the official LTS packages, the same pinned build on every host.
 
+## Amazon RDS / Aurora PostgreSQL
+
+Tested on RDS PostgreSQL 16 with the master user: snapshot, CDC and `check --checksums` all passed (0 of 64 buckets
+differ).
+- Enable `rds.logical_replication = 1` in the DB parameter group and reboot.
+- Set `max_slot_wal_keep_size` in the same parameter group. `ALTER SYSTEM` is not allowed on RDS.
+- The master user can run `migrate start --apply-postgres` (REPLICA IDENTITY FULL, CREATE PUBLICATION) with no extra
+  grants.
+- *Not yet tested:* a non-master user needs the `rds_replication` role, and must own the migrated tables for
+  `REPLICA IDENTITY FULL`.
+
 ## Limits today
 
 - **Preview:** replicated targets wait on the soak verdict.
 - One Postgres table maps to one ClickHouse table. No automatic denormalisation of joins.
 - Sort key and partitioning can't change after the first snapshot (a PeerDB limit). Review the plan before
   `migrate start`.
-- Managed Postgres (RDS/Aurora) is not yet tested.
 - The Go read-side SDK (`sdk/go`) is new in this release; SDKs for other languages are not written yet.
 
 ## Evidence
