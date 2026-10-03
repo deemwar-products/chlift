@@ -1,0 +1,16 @@
+16:31:27 start 00-seed
+16:35:05 done 00-seed
+16:35:05 start 01-install
+16:37:34 done 01-install
+16:37:34 start 02-migrate-plan
+16:37:39 done 02-migrate-plan
+16:37:39 start 03-migrate-start
+16:40:14 done 03-migrate-start
+16:40:14 start 04-cdc
+16:41:34 done 04-cdc
+16:41:34 start 05-migrate-check
+16:42:44 done 05-migrate-check
+16:42:44 start 07-corruption-repro
+16:46:09 done 07-corruption-repro
+16:46:09 start 06-bench
+16:51:16 done 06-bench

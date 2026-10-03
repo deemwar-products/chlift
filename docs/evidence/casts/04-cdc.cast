@@ -1,0 +1,13 @@
+{"version": 2, "width": 100, "height": 28, "timestamp": 1791045614, "env": {"SHELL": "/bin/bash", "TERM": "xterm-256color"}}
+[0.024433, "o", "\u001b[H\u001b[2J\u001b[3J"]
+[0.025973, "o", "\u001b[1;32m$\u001b[0m \u001b[1mpsql -c \"INSERT INTO user_events(account_id,user_id,event_time,kind,properties) SELECT 1+(random()*499)::int, 1+(random()*19999)::int, now() - interval '1 day' - random()*interval '60 days', 'live', '{}' FROM generate_series(1,50000)\"\u001b[0m\r\n"]
+[21.734546, "o", "INSERT 0 50000\r\n"]
+[21.802438, "o", "\u001b[1;32m$\u001b[0m \u001b[1mpsql -c \"UPDATE request_logs SET status = 504 WHERE id BETWEEN 5000 AND 5999\"\u001b[0m\r\n"]
+[24.35215, "o", "UPDATE 1000\r\n"]
+[24.375691, "o", "\u001b[1;32m$\u001b[0m \u001b[1mpsql -c \"DELETE FROM user_events WHERE id <= 3000\"\u001b[0m\r\n"]
+[25.578578, "o", "DELETE 3000\r\n"]
+[25.589688, "o", "\u001b[1;32m$\u001b[0m \u001b[1mpsql -c \"DELETE FROM system_logs WHERE id BETWEEN 2001 AND 4000\"\u001b[0m\r\n"]
+[26.777037, "o", "DELETE 2000\r\n"]
+[26.788879, "o", "\u001b[1;32m$\u001b[0m \u001b[1msleep 45\u001b[0m\r\n"]
+[72.803711, "o", "\u001b[1;32m$\u001b[0m \u001b[1mchlift migrate status\u001b[0m\r\n"]
+[76.165243, "o", "mirror chlift_demo: RUNNING, 56000 rows synced by CDC, replication slot holds 81 MB of WAL\r\n  public.user_events     postgres ~8000104  node-a 8053000  node-b 8053000\r\n  public.request_logs    postgres ~4000025  node-a 4001000  node-b 4001000\r\n  public.system_logs     postgres ~1996465  node-a 2002000  node-b 2002000\r\n"]

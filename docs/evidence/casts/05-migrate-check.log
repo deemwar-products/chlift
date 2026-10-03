@@ -1,0 +1,11 @@
+$ time chlift migrate check --checksums
+ok   public.user_events: postgres 8047000 rows; replicas map[node-a:8047000 node-b:8047000] 
+ok   public.request_logs: postgres 4000000 rows; replicas map[node-a:4000000 node-b:4000000] 
+ok   public.system_logs: postgres 1998000 rows; replicas map[node-a:1998000 node-b:1998000] 
+checksum public.user_events: 64 buckets x 6 columns (count, id, account_id, user_id, event_time, kind), 0 differ
+checksum public.request_logs: 64 buckets x 9 columns (count, id, account_id, created_at, method, path, status, duration_ms, user_agent), 0 differ
+checksum public.system_logs: 64 buckets x 6 columns (count, id, logged_at, level, service, message), 0 differ
+
+real	1m5.705s
+user	0m0.074s
+sys	0m0.105s

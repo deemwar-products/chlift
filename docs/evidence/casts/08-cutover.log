@@ -1,0 +1,31 @@
+$ chlift migrate status
+mirror chlift_demo: RUNNING, 56000 rows synced by CDC, replication slot holds 0 MB of WAL
+  public.user_events     postgres ~8000104  node-a 8053000  node-b 8053000
+  public.request_logs    postgres ~4000025  node-a 4001000  node-b 4001000
+  public.system_logs     postgres ~1996465  node-a 2002000  node-b 2002000
+$ time chlift migrate cutover
+cutover: watermark 0/E659C2C0; waiting for PeerDB to confirm it
+checksum public.user_events: 64 buckets x 6 columns (count, id, account_id, user_id, event_time, kind), 0 differ
+checksum public.request_logs: 64 buckets x 9 columns (count, id, account_id, created_at, method, path, status, duration_ms, user_agent), 0 differ
+checksum public.system_logs: 64 buckets x 6 columns (count, id, logged_at, level, service, message), 0 differ
+cutover: Postgres and every replica agree (day counts and PK-range checksums)
+cutover done: mirror stopped, slot and publication dropped; ClickHouse database chlift keeps the data. Postgres tables are untouched (archive or drop them when you are ready)
+
+real	1m51.951s
+user	0m0.257s
+sys	0m0.359s
+$ psql -c "SELECT count(*) AS replication_slots FROM pg_replication_slots" -c "SELECT count(*) AS publications FROM pg_publication"
+ replication_slots 
+-------------------
+                 1
+(1 row)
+
+ publications 
+--------------
+            1
+(1 row)
+
+$ chlift migrate check
+ok   public.user_events: postgres 8047000 rows; replicas map[node-a:8047000 node-b:8047000] 
+ok   public.request_logs: postgres 4000000 rows; replicas map[node-a:4000000 node-b:4000000] 
+ok   public.system_logs: postgres 1998000 rows; replicas map[node-a:1998000 node-b:1998000] 

@@ -1,0 +1,14 @@
+$ psql -c "INSERT INTO user_events(account_id,user_id,event_time,kind,properties) SELECT 1+(random()*499)::int, 1+(random()*19999)::int, now() - interval '1 day' - random()*interval '60 days', 'live', '{}' FROM generate_series(1,50000)"
+INSERT 0 50000
+$ psql -c "UPDATE request_logs SET status = 504 WHERE id BETWEEN 5000 AND 5999"
+UPDATE 1000
+$ psql -c "DELETE FROM user_events WHERE id <= 3000"
+DELETE 3000
+$ psql -c "DELETE FROM system_logs WHERE id BETWEEN 2001 AND 4000"
+DELETE 2000
+$ sleep 45
+$ chlift migrate status
+mirror chlift_demo: RUNNING, 56000 rows synced by CDC, replication slot holds 81 MB of WAL
+  public.user_events     postgres ~8000104  node-a 8053000  node-b 8053000
+  public.request_logs    postgres ~4000025  node-a 4001000  node-b 4001000
+  public.system_logs     postgres ~1996465  node-a 2002000  node-b 2002000

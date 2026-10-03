@@ -1,0 +1,17 @@
+<clickhouse>
+  <profiles>
+    <default>
+      <!-- PeerDB passes explicit Keeper paths; inside a Replicated database, swap them for the database's own path. -->
+      <database_replicated_allow_replicated_engine_arguments>2</database_replicated_allow_replicated_engine_arguments>
+    </default>
+  </profiles>
+  <!-- dev/soak only: no passwords inside the private compose network -->
+  <users>
+    <default>
+      <password></password>
+      <networks><ip>::/0</ip></networks>
+      <profile>default</profile><quota>default</quota>
+      <access_management>1</access_management>
+    </default>
+  </users>
+</clickhouse>

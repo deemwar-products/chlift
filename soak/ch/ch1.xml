@@ -1,0 +1,33 @@
+<clickhouse>
+  <listen_host>0.0.0.0</listen_host>
+  <max_server_memory_usage>1200000000</max_server_memory_usage>
+  <mark_cache_size>268435456</mark_cache_size>
+  <macros><shard>1</shard><replica>ch1</replica><cluster>chlift</cluster></macros>
+  <remote_servers>
+    <chlift>
+      <shard>
+        <internal_replication>true</internal_replication>
+        <replica><host>ch1</host><port>9000</port></replica>
+        <replica><host>ch2</host><port>9000</port></replica>
+      </shard>
+    </chlift>
+  </remote_servers>
+  <zookeeper>
+    <node><host>ch1</host><port>9181</port></node>
+    <node><host>ch2</host><port>9181</port></node>
+    <node><host>keeper3</host><port>9181</port></node>
+  </zookeeper>
+  <keeper_server>
+    <tcp_port>9181</tcp_port>
+    <server_id>1</server_id>
+    <log_storage_path>/var/lib/clickhouse/coordination/log</log_storage_path>
+    <snapshot_storage_path>/var/lib/clickhouse/coordination/snapshots</snapshot_storage_path>
+    <raft_configuration>
+      <server><id>1</id><hostname>ch1</hostname><port>9234</port></server>
+      <server><id>2</id><hostname>ch2</hostname><port>9234</port></server>
+      <server><id>3</id><hostname>keeper3</hostname><port>9234</port></server>
+    </raft_configuration>
+  </keeper_server>
+  <distributed_ddl><path>/clickhouse/task_queue/ddl</path></distributed_ddl>
+  <prometheus><endpoint>/metrics</endpoint><port>9363</port><metrics>true</metrics><events>true</events><asynchronous_metrics>true</asynchronous_metrics></prometheus>
+</clickhouse>

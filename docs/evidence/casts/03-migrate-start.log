@@ -1,0 +1,57 @@
+$ chlift migrate start
+chlift: postgres needs these changes first (rerun with --apply-postgres, or run them yourself):
+  ALTER TABLE "public"."user_events" REPLICA IDENTITY FULL;
+  ALTER TABLE "public"."request_logs" REPLICA IDENTITY FULL;
+  ALTER TABLE "public"."system_logs" REPLICA IDENTITY FULL;
+  CREATE PUBLICATION chlift_demo_pub FOR TABLE "public"."user_events", "public"."request_logs", "public"."system_logs";
+$ chlift migrate start --apply-postgres
+postgres: ALTER TABLE "public"."user_events" REPLICA IDENTITY FULL
+postgres: ALTER TABLE "public"."request_logs" REPLICA IDENTITY FULL
+postgres: ALTER TABLE "public"."system_logs" REPLICA IDENTITY FULL
+postgres: CREATE PUBLICATION chlift_demo_pub FOR TABLE "public"."user_events", "public"."request_logs", "public"."system_logs"
+clickhouse: database chlift (Replicated) on 2 replica(s)
+peerdb: mirror chlift_demo created ({"workflowId":"chlift_demo-peerflow"}); snapshot then CDC. Follow with `chlift migrate status`
+$ date -u +%T
+16:37:45
+$ chlift migrate status
+mirror chlift_demo: SNAPSHOT, 0 rows synced by CDC, replication slot holds 0 MB of WAL
+  public.user_events     postgres ~8000104  node-a 790055  node-b 790055
+  public.request_logs    postgres ~4000025  node-a 1170657  node-b 1170657
+  public.system_logs     postgres ~1996465  node-a 0  node-b 0
+$ chlift migrate status
+mirror chlift_demo: SNAPSHOT, 0 rows synced by CDC, replication slot holds 0 MB of WAL
+  public.user_events     postgres ~8000104  node-a 1644032  node-b 1678943
+  public.request_logs    postgres ~4000025  node-a 2146286  node-b 2146286
+  public.system_logs     postgres ~1996465  node-a 0  node-b 0
+$ chlift migrate status
+mirror chlift_demo: SNAPSHOT, 0 rows synced by CDC, replication slot holds 0 MB of WAL
+  public.user_events     postgres ~8000104  node-a 2567829  node-b 2567829
+  public.request_logs    postgres ~4000025  node-a 3317081  node-b 3317081
+  public.system_logs     postgres ~1996465  node-a 0  node-b 0
+$ chlift migrate status
+mirror chlift_demo: SNAPSHOT, 0 rows synced by CDC, replication slot holds 0 MB of WAL
+  public.user_events     postgres ~8000104  node-a 3752968  node-b 3752968
+  public.request_logs    postgres ~4000025  node-a 4000000  node-b 4000000
+  public.system_logs     postgres ~1996465  node-a 603887  node-b 603887
+$ chlift migrate status
+mirror chlift_demo: SNAPSHOT, 0 rows synced by CDC, replication slot holds 0 MB of WAL
+  public.user_events     postgres ~8000104  node-a 4641823  node-b 4641823
+  public.request_logs    postgres ~4000025  node-a 4000000  node-b 4000000
+  public.system_logs     postgres ~1996465  node-a 1801204  node-b 1801204
+$ chlift migrate status
+mirror chlift_demo: SNAPSHOT, 0 rows synced by CDC, replication slot holds 0 MB of WAL
+  public.user_events     postgres ~8000104  node-a 5728294  node-b 5728294
+  public.request_logs    postgres ~4000025  node-a 4000000  node-b 4000000
+  public.system_logs     postgres ~1996465  node-a 2000000  node-b 2000000
+$ chlift migrate status
+mirror chlift_demo: SNAPSHOT, 0 rows synced by CDC, replication slot holds 0 MB of WAL
+  public.user_events     postgres ~8000104  node-a 7111104  node-b 7111104
+  public.request_logs    postgres ~4000025  node-a 4000000  node-b 4000000
+  public.system_logs     postgres ~1996465  node-a 2000000  node-b 2000000
+$ chlift migrate status
+mirror chlift_demo: RUNNING, 0 rows synced by CDC, replication slot holds 0 MB of WAL
+  public.user_events     postgres ~8000104  node-a 8000000  node-b 8000000
+  public.request_logs    postgres ~4000025  node-a 4000000  node-b 4000000
+  public.system_logs     postgres ~1996465  node-a 2000000  node-b 2000000
+$ date -u +%T
+16:40:11

@@ -1,0 +1,7 @@
+{"version": 2, "width": 100, "height": 28, "timestamp": 1791045969, "env": {"SHELL": "/bin/bash", "TERM": "xterm-256color"}}
+[0.019395, "o", "\u001b[H\u001b[2J\u001b[3J"]
+[0.021563, "o", "\u001b[1;32m$\u001b[0m \u001b[1mchlift migrate bench --runs 5 --out bench-raw.json\u001b[0m\r\n"]
+[302.526801, "o", "query (demo dataset, median of runs)           postgres   clickhouse FINAL     clickhouse\r\ndaily active users, last 30 days                 5388ms              266ms          107ms  (20x / 50x)\r\nevents per kind per week, 6 months              21950ms             1600ms          710ms  (14x / 31x)\r\ntop 10 accounts by events, last 7 days           5740ms              159ms           57ms  (36x / 101x)\r\np95 latency per endpoint, last 30 days          23994ms              147ms           78ms  (163x / 308x)\r\nraw samples (every run, same invocation): bench-raw.json\r\n"]
+[302.55903, "o", "\u001b[1;32m$\u001b[0m \u001b[1mpython3 bench_table.py bench-raw.json\u001b[0m"]
+[302.568161, "o", "\r\n"]
+[303.661707, "o", "runs per query: 5, taken 2026-10-03T16:51:12Z\r\nquery                                        postgres   ch FINAL       ch  speed-up FINAL / after cutover\r\ndaily active users, last 30 days               5388ms      266ms    107ms  20x / 50x\r\nevents per kind per week, 6 months            21950ms     1600ms    710ms  14x / 31x\r\ntop 10 accounts by events, last 7 days         5740ms      159ms     57ms  36x / 101x\r\np95 latency per endpoint, last 30 days        23994ms      147ms     78ms  163x / 308x\r\n"]

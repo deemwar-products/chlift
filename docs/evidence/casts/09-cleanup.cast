@@ -1,0 +1,10 @@
+{"version": 2, "width": 100, "height": 28, "timestamp": 1791047567, "env": {"SHELL": "/bin/bash", "TERM": "xterm-256color"}}
+[0.028245, "o", "\u001b[H\u001b[2J\u001b[3J\u001b[1;32m$\u001b[0m \u001b[1mpsql -c \"SELECT slot_name FROM pg_replication_slots\" -c \"SELECT pubname FROM pg_publication\"\u001b[0m\r\n"]
+[1.229713, "o", " slot_name \r\n-----------\r\n(0 rows)\r\n\r\n"]
+[1.230884, "o", "     pubname     \r\n-----------------\r\n chlift_safe_pub\r\n(1 row)\r\n\r\n"]
+[1.256472, "o", "\u001b[1;32m$\u001b[0m \u001b[1mchlift migrate abort --plan safe.yaml\u001b[0m\r\n"]
+[4.677097, "o", "clickhouse: database chlift_safe dropped on 2 replica(s)\r\n"]
+[4.74633, "o", "postgres: publication chlift_safe_pub dropped; mirror slots left: 0\r\n"]
+[4.751054, "o", "\u001b[1;32m$\u001b[0m \u001b[1mpsql -c \"SELECT count(*) AS replication_slots FROM pg_replication_slots\" -c \"SELECT count(*) AS publications FROM pg_publication\"\u001b[0m\r\n"]
+[5.934217, "o", " replication_slots \r\n-------------------\r\n                 0\r\n(1 row)\r\n\r\n"]
+[5.935306, "o", " publications \r\n--------------\r\n            0\r\n(1 row)\r\n\r\n"]

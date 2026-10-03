@@ -1,0 +1,17 @@
+$ chlift migrate plan
+migrate public.user_events              8000104 rows  ORDER BY (account_id, event_time, id)  toYYYYMM(event_time)
+    note: sort key and partitioning cannot change after the table is created (PeerDB #4604): review them now
+    note: needs REPLICA IDENTITY FULL: its sort key starts with account_id, and a DELETE (retention cleanup included) would otherwise leave the row live in ClickHouse
+migrate public.request_logs             4000025 rows  ORDER BY (account_id, created_at, id)  toYYYYMM(created_at)
+    note: sort key and partitioning cannot change after the table is created (PeerDB #4604): review them now
+    note: needs REPLICA IDENTITY FULL: its sort key starts with account_id, and a DELETE (retention cleanup included) would otherwise leave the row live in ClickHouse
+migrate public.system_logs              1996465 rows  ORDER BY (logged_at, id)  toYYYYMM(logged_at)
+    note: sort key and partitioning cannot change after the table is created (PeerDB #4604): review them now
+    note: needs REPLICA IDENTITY FULL: its sort key starts with logged_at, and a DELETE (retention cleanup included) would otherwise leave the row live in ClickHouse
+keep    public.users                 20000 rows < --min-rows 100000
+keep    public.accounts              500 rows < --min-rows 100000
+postgres: ALTER TABLE "public"."user_events" REPLICA IDENTITY FULL
+postgres: ALTER TABLE "public"."request_logs" REPLICA IDENTITY FULL
+postgres: ALTER TABLE "public"."system_logs" REPLICA IDENTITY FULL
+postgres: CREATE PUBLICATION chlift_demo_pub FOR TABLE "public"."user_events", "public"."request_logs", "public"."system_logs"
+wrote chlift-migration.yaml: review it, then run `chlift migrate start`

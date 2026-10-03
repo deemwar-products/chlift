@@ -1,0 +1,19 @@
+# Dev environment for the installer and migrations: three SSH-enabled nodes (no systemd, so the installer runs in
+# supervisor mode) plus a logical-replication Postgres source. Runs on rootless docker (user agent).
+# Key first: ssh-keygen -t ed25519 -N '' -f ~/.ssh/chlift_dev && cp ~/.ssh/chlift_dev.pub dev/authorized_keys
+name: chlift-dev
+x-node: &node
+  build: { context: ., dockerfile: Dockerfile.node }
+  restart: unless-stopped
+  init: true
+services:
+  node-a: { <<: *node, hostname: node-a, mem_limit: 1536m, ports: ["127.0.0.1:2221:22"] }
+  node-b: { <<: *node, hostname: node-b, mem_limit: 1536m, ports: ["127.0.0.1:2222:22"] }
+  node-c: { <<: *node, hostname: node-c, mem_limit: 512m, ports: ["127.0.0.1:2223:22"] }
+  postgres:
+    image: postgres:16
+    restart: unless-stopped
+    mem_limit: 768m
+    command: -c wal_level=logical -c max_replication_slots=10 -c max_wal_senders=10 -c max_slot_wal_keep_size=2GB
+    environment: { POSTGRES_PASSWORD: postgres, POSTGRES_DB: app }
+    ports: ["127.0.0.1:55441:5432"]

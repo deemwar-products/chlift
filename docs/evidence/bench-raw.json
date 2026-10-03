@@ -1,0 +1,122 @@
+{
+  "results": [
+    {
+      "query": "daily active users, last 30 days",
+      "postgres_ms": 5388.319,
+      "clickhouse_final_ms": 266,
+      "clickhouse_ms": 107,
+      "postgres_runs_ms": [
+        6276.33,
+        5388.319,
+        6305.165,
+        4790.906,
+        4196.431
+      ],
+      "clickhouse_final_runs_ms": [
+        747,
+        196,
+        266,
+        404,
+        265
+      ],
+      "clickhouse_runs_ms": [
+        122,
+        91,
+        107,
+        83,
+        240
+      ],
+      "postgres_sql": "SELECT date_trunc('day', event_time) d, count(DISTINCT user_id) FROM user_events WHERE event_time \u003e now() - interval '30 days' GROUP BY 1 ORDER BY 1",
+      "clickhouse_sql": "SELECT toDate(event_time) d, uniqExact(user_id) FROM %[1]s.user_events%[2]s WHERE event_time \u003e now() - INTERVAL 30 DAY AND _peerdb_is_deleted = 0 GROUP BY d ORDER BY d"
+    },
+    {
+      "query": "events per kind per week, 6 months",
+      "postgres_ms": 21950.227,
+      "clickhouse_final_ms": 1600,
+      "clickhouse_ms": 710,
+      "postgres_runs_ms": [
+        17318.306,
+        21188.526,
+        21950.227,
+        23843.586,
+        24776.214
+      ],
+      "clickhouse_final_runs_ms": [
+        1098,
+        3524,
+        1388,
+        1784,
+        1600
+      ],
+      "clickhouse_runs_ms": [
+        673,
+        1579,
+        710,
+        796,
+        561
+      ],
+      "postgres_sql": "SELECT date_trunc('week', event_time) w, kind, count(*) FROM user_events GROUP BY 1, 2 ORDER BY 1, 2",
+      "clickhouse_sql": "SELECT toStartOfWeek(event_time) w, kind, count() FROM %[1]s.user_events%[2]s WHERE _peerdb_is_deleted = 0 GROUP BY w, kind ORDER BY w, kind"
+    },
+    {
+      "query": "top 10 accounts by events, last 7 days",
+      "postgres_ms": 5739.547,
+      "clickhouse_final_ms": 159,
+      "clickhouse_ms": 57,
+      "postgres_runs_ms": [
+        5040.401,
+        6087.598,
+        5739.547,
+        4438.124,
+        6851.59
+      ],
+      "clickhouse_final_runs_ms": [
+        318,
+        159,
+        146,
+        151,
+        318
+      ],
+      "clickhouse_runs_ms": [
+        99,
+        43,
+        41,
+        57,
+        65
+      ],
+      "postgres_sql": "SELECT account_id, count(*) c FROM user_events WHERE event_time \u003e now() - interval '7 days' GROUP BY 1 ORDER BY c DESC LIMIT 10",
+      "clickhouse_sql": "SELECT account_id, count() c FROM %[1]s.user_events%[2]s WHERE event_time \u003e now() - INTERVAL 7 DAY AND _peerdb_is_deleted = 0 GROUP BY account_id ORDER BY c DESC LIMIT 10"
+    },
+    {
+      "query": "p95 latency per endpoint, last 30 days",
+      "postgres_ms": 23993.914,
+      "clickhouse_final_ms": 147,
+      "clickhouse_ms": 78,
+      "postgres_runs_ms": [
+        24989.232,
+        13555.852,
+        24413.958,
+        23336.401,
+        23993.914
+      ],
+      "clickhouse_final_runs_ms": [
+        136,
+        126,
+        147,
+        380,
+        517
+      ],
+      "clickhouse_runs_ms": [
+        49,
+        70,
+        78,
+        99,
+        132
+      ],
+      "postgres_sql": "SELECT path, percentile_cont(0.95) WITHIN GROUP (ORDER BY duration_ms) FROM request_logs WHERE created_at \u003e now() - interval '30 days' GROUP BY 1 ORDER BY 1",
+      "clickhouse_sql": "SELECT path, quantileExact(0.95)(duration_ms) FROM %[1]s.request_logs%[2]s WHERE created_at \u003e now() - INTERVAL 30 DAY AND _peerdb_is_deleted = 0 GROUP BY path ORDER BY path"
+    }
+  ],
+  "runs": 5,
+  "taken_utc": "2026-10-03T16:51:12Z"
+}

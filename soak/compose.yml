@@ -1,0 +1,188 @@
+# chlift soak: PeerDB (v0.37.10) -> 2 ClickHouse replicas + 3-member Keeper.
+# Question it answers: does PeerDB lose or corrupt rows when the target is a replicated cluster?
+# Only private networking; the two host ports are for inspection (127.0.0.1).
+# Every container is memory-capped: total ~7.1G (shared box with production neighbours).
+name: chlift-soak
+
+x-ch: &ch
+  image: clickhouse/clickhouse-server:${CH_VERSION:-26.3}
+  cpuset: ${SOAK_CPUS:-6,7}
+  restart: unless-stopped
+  init: true
+  environment:
+    CLICKHOUSE_SKIP_USER_SETUP: "1"
+  ulimits:
+    nofile: { soft: 262144, hard: 262144 }
+  mem_limit: 1536m
+
+x-catalog: &catalog
+  PEERDB_CATALOG_HOST: catalog
+  PEERDB_CATALOG_PORT: 5432
+  PEERDB_CATALOG_USER: postgres
+  PEERDB_CATALOG_PASSWORD: postgres
+  PEERDB_CATALOG_DATABASE: postgres
+
+x-flow: &flow
+  <<: *catalog
+  TEMPORAL_HOST_PORT: temporal:7233
+  PEERDB_TEMPORAL_NAMESPACE: default
+  # PeerDB stages Avro files in S3; ClickHouse must reach the same endpoint (SeaweedFS here).
+  PEERDB_CLICKHOUSE_AWS_CREDENTIALS_AWS_ACCESS_KEY_ID: soak
+  PEERDB_CLICKHOUSE_AWS_CREDENTIALS_AWS_SECRET_ACCESS_KEY: soaksecret
+  PEERDB_CLICKHOUSE_AWS_CREDENTIALS_AWS_REGION: us-east-1
+  PEERDB_CLICKHOUSE_AWS_CREDENTIALS_AWS_ENDPOINT_URL_S3: http://s3:8333
+  PEERDB_CLICKHOUSE_AWS_S3_BUCKET_NAME: peerdb
+
+services:
+  source:
+    mem_limit: 768m
+    cpuset: ${SOAK_CPUS:-6,7}
+    image: postgres:16
+    restart: unless-stopped
+    command: >
+      -c wal_level=logical -c max_replication_slots=10 -c max_wal_senders=10
+      -c max_slot_wal_keep_size=4GB -c shared_buffers=256MB
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: app
+    volumes: [source:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 5s
+      retries: 30
+
+  ch1:
+    <<: *ch
+    hostname: ch1
+    ports: ["127.0.0.1:18123:8123"]
+    volumes:
+      - ./ch/ch1.xml:/etc/clickhouse-server/config.d/chlift.xml:ro
+      - ./ch/users.xml:/etc/clickhouse-server/users.d/chlift.xml:ro
+      - ch1:/var/lib/clickhouse
+  ch2:
+    <<: *ch
+    hostname: ch2
+    volumes:
+      - ./ch/ch2.xml:/etc/clickhouse-server/config.d/chlift.xml:ro
+      - ./ch/users.xml:/etc/clickhouse-server/users.d/chlift.xml:ro
+      - ch2:/var/lib/clickhouse
+  keeper3:
+    mem_limit: 384m
+    cpuset: ${SOAK_CPUS:-6,7}
+    image: clickhouse/clickhouse-keeper:${CH_VERSION:-26.3}
+    hostname: keeper3
+    restart: unless-stopped
+    volumes:
+      - ./ch/keeper3.xml:/etc/clickhouse-keeper/keeper_config.xml:ro
+      - keeper3:/var/lib/clickhouse
+
+  s3:
+    mem_limit: 512m
+    cpuset: ${SOAK_CPUS:-6,7}
+    image: chrislusf/seaweedfs:latest
+    restart: unless-stopped
+    command: server -dir=/data -s3 -s3.port=8333 -master.volumeSizeLimitMB=1024
+    volumes: [s3:/data]
+  s3-bucket:
+    mem_limit: 64m
+    cpuset: ${SOAK_CPUS:-6,7}
+    image: curlimages/curl:latest
+    restart: on-failure
+    depends_on: [s3]
+    entrypoint: ["sh", "-c", "sleep 8 && curl -sS -o /dev/null -w '%{http_code}' -X PUT http://s3:8333/peerdb | grep -qE '200|409' && echo bucket-ok"]
+
+  catalog:
+    mem_limit: 384m
+    cpuset: ${SOAK_CPUS:-6,7}
+    image: postgres:18-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: postgres
+    volumes: [catalog:/var/lib/postgresql]
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 5s
+      retries: 30
+  temporal:
+    mem_limit: 512m
+    cpuset: ${SOAK_CPUS:-6,7}
+    image: temporalio/auto-setup:1.29
+    restart: unless-stopped
+    depends_on: { catalog: { condition: service_healthy } }
+    environment:
+      DB: postgres12
+      DB_PORT: 5432
+      POSTGRES_USER: postgres
+      POSTGRES_PWD: postgres
+      POSTGRES_SEEDS: catalog
+      DYNAMIC_CONFIG_FILE_PATH: config/dynamicconfig/development-sql.yaml
+    volumes:
+      - ./temporal/dynamicconfig.yaml:/etc/temporal/config/dynamicconfig/development-sql.yaml:ro
+  temporal-admin-tools:
+    mem_limit: 128m
+    cpuset: ${SOAK_CPUS:-6,7}
+    image: temporalio/admin-tools:1.25.2-tctl-1.18.1-cli-1.1.1
+    restart: unless-stopped
+    depends_on: [temporal]
+    environment:
+      TEMPORAL_ADDRESS: temporal:7233
+      TEMPORAL_CLI_ADDRESS: temporal:7233
+    entrypoint: /etc/temporal/entrypoint.sh
+    volumes:
+      - ./temporal/search-attr.sh:/etc/temporal/entrypoint.sh:ro
+    healthcheck:
+      test: ["CMD", "tctl", "workflow", "list"]
+      interval: 2s
+      retries: 60
+
+  flow-migrate:
+    mem_limit: 256m
+    cpuset: ${SOAK_CPUS:-6,7}
+    image: ghcr.io/peerdb-io/flow-api:${PEERDB_VERSION:-stable-v0.37.10}
+    entrypoint: ["/home/peerdb/peer-flow", "migrate"]
+    environment: *catalog
+    depends_on: { catalog: { condition: service_healthy } }
+  flow-api:
+    mem_limit: 256m
+    cpuset: ${SOAK_CPUS:-6,7}
+    image: ghcr.io/peerdb-io/flow-api:${PEERDB_VERSION:-stable-v0.37.10}
+    restart: unless-stopped
+    environment: *flow
+    ports: ["127.0.0.1:18113:8113"]
+    depends_on:
+      flow-migrate: { condition: service_completed_successfully }
+      temporal-admin-tools: { condition: service_healthy }
+  flow-snapshot-worker:
+    mem_limit: 384m
+    cpuset: ${SOAK_CPUS:-6,7}
+    image: ghcr.io/peerdb-io/flow-snapshot-worker:${PEERDB_VERSION:-stable-v0.37.10}
+    restart: unless-stopped
+    environment: *flow
+    depends_on:
+      flow-migrate: { condition: service_completed_successfully }
+      temporal-admin-tools: { condition: service_healthy }
+  flow-worker:
+    mem_limit: 768m
+    cpuset: ${SOAK_CPUS:-6,7}
+    image: ghcr.io/peerdb-io/flow-worker:${PEERDB_VERSION:-stable-v0.37.10}
+    restart: unless-stopped
+    environment: *flow
+    depends_on:
+      flow-migrate: { condition: service_completed_successfully }
+      temporal-admin-tools: { condition: service_healthy }
+
+  runner:
+    mem_limit: 128m
+    cpuset: ${SOAK_CPUS:-6,7}
+    build: { context: .., dockerfile: soak/Dockerfile }
+    restart: unless-stopped
+    profiles: [run]
+    environment:
+      SOAK_PG: postgres://postgres:postgres@source:5432/app
+      SOAK_CH: ch1:9000,ch2:9000
+      SOAK_RESULTS: /results
+    volumes:
+      - ${SOAK_RESULTS_DIR:-~/chlift-local/soak/results}:/results
+
+volumes: { source: {}, ch1: {}, ch2: {}, keeper3: {}, s3: {}, catalog: {} }

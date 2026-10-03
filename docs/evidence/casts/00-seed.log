@@ -1,0 +1,23 @@
+$ chlift seed --events 8000000
+seeded entity tables
+seeded user_events
+seeded request_logs
+seeded system_logs
+seeded indexes
+seeded analyze
+$ psql -c "SELECT relname, n_live_tup FROM pg_stat_user_tables ORDER BY 1"
+   relname    | n_live_tup 
+--------------+------------
+ accounts     |        500
+ request_logs |    3999979
+ system_logs  |    2000000
+ user_events  |    8000032
+ users        |      20000
+(5 rows)
+
+$ psql -c "SELECT pg_size_pretty(pg_database_size(current_database()))"
+ pg_size_pretty 
+----------------
+ 2616 MB
+(1 row)
+

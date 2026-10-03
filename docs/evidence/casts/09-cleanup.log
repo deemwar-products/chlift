@@ -1,0 +1,24 @@
+$ psql -c "SELECT slot_name FROM pg_replication_slots" -c "SELECT pubname FROM pg_publication"
+ slot_name 
+-----------
+(0 rows)
+
+     pubname     
+-----------------
+ chlift_safe_pub
+(1 row)
+
+$ chlift migrate abort --plan safe.yaml
+clickhouse: database chlift_safe dropped on 2 replica(s)
+postgres: publication chlift_safe_pub dropped; mirror slots left: 0
+$ psql -c "SELECT count(*) AS replication_slots FROM pg_replication_slots" -c "SELECT count(*) AS publications FROM pg_publication"
+ replication_slots 
+-------------------
+                 0
+(1 row)
+
+ publications 
+--------------
+            0
+(1 row)
+

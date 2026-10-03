@@ -1,0 +1,7 @@
+# A small Linux "server" for developing the installer: sshd with key auth only, no systemd.
+FROM ubuntu:24.04
+RUN apt-get update -qq && DEBIAN_FRONTEND=noninteractive apt-get install -y -qq openssh-server ca-certificates curl gnupg sudo >/dev/null \
+ && mkdir -p /run/sshd /root/.ssh && chmod 700 /root/.ssh \
+ && sed -i 's/^#\?PasswordAuthentication.*/PasswordAuthentication no/; s/^#\?PermitRootLogin.*/PermitRootLogin prohibit-password/' /etc/ssh/sshd_config
+COPY authorized_keys /root/.ssh/authorized_keys
+CMD ["/usr/sbin/sshd", "-D", "-e"]

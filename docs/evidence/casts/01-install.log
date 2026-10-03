@@ -1,0 +1,74 @@
+$ chlift init --cluster demo --ssh-key ~/.ssh/chlift_dev --insecure-ignore-host-key --secrets-file ./secrets.env \
+  --host node-a=127.0.0.1:2221@node-a:clickhouse,keeper --host node-b=127.0.0.1:2222@node-b:clickhouse,keeper \
+  --host node-c=127.0.0.1:2223@node-c:keeper --host peer=local:peerdb \
+  --peerdb-dir /tmp/chlift-demo/peerdb --peerdb-network chlift-dev_default --s3-endpoint http://chlift-s3:8333 \
+  --pg-peer-host postgres --pg-peer-port 5432
+warning: node-a: private_address is not an IP, so services bind to all interfaces; firewall them
+warning: node-b: private_address is not an IP, so services bind to all interfaces; firewall them
+warning: node-c: private_address is not an IP, so services bind to all interfaces; firewall them
+warning: peer: private_address is not an IP, so services bind to all interfaces; firewall them
+generated CHLIFT_CH_PASSWORD, CHLIFT_CLUSTER_SECRET, CHLIFT_S3_SECRET, CHLIFT_PEERDB_CATALOG_PASSWORD in ./secrets.env (mode 0600; values not shown)
+wrote chlift.yaml
+$ chlift plan
+cluster demo: 2 clickhouse replica(s), 3 keeper member(s)
+
+node-a  [clickhouse,keeper]  ubuntu 24.04 x86_64, 8 CPU, 1 GB RAM, 295 GB free
+  install: clickhouse-server 26.3.x (embedded keeper id 1)
+  warning: 1 GB RAM: ClickHouse docs advise 16 GB minimum, 32 GB+ for production; fine for dev/test
+  warning: no systemd: services run under chlift's supervisor mode (dev containers, minimal images)
+
+node-b  [clickhouse,keeper]  ubuntu 24.04 x86_64, 8 CPU, 1 GB RAM, 295 GB free
+  install: clickhouse-server 26.3.x (embedded keeper id 2)
+  warning: 1 GB RAM: ClickHouse docs advise 16 GB minimum, 32 GB+ for production; fine for dev/test
+  warning: no systemd: services run under chlift's supervisor mode (dev containers, minimal images)
+
+node-c  [keeper]  ubuntu 24.04 x86_64, 8 CPU, 0 GB RAM, 295 GB free
+  install: clickhouse-keeper 26.3.x (id 3)
+  warning: no systemd: services run under chlift's supervisor mode (dev containers, minimal images)
+
+peer  [peerdb]
+  install: peerdb stable-v0.37.10 + seaweedfs staging (docker compose)
+  warning: only 0 GB free on /var/lib
+  warning: no systemd: services run under chlift's supervisor mode (dev containers, minimal images)
+warning: node-a: private_address is not an IP, so services bind to all interfaces; firewall them
+warning: node-b: private_address is not an IP, so services bind to all interfaces; firewall them
+warning: node-c: private_address is not an IP, so services bind to all interfaces; firewall them
+warning: peer: private_address is not an IP, so services bind to all interfaces; firewall them
+$ time chlift install
+ClickHouse build for every host: 26.3.40.16
+node-a: ClickHouse 26.3.40.16 installed
+node-a: wrote /etc/clickhouse-server/users.d/chlift.xml
+node-a: wrote /etc/chlift/client.xml
+node-a: wrote /etc/clickhouse-server/config.d/chlift.xml
+node-b: ClickHouse 26.3.40.16 installed
+node-b: wrote /etc/clickhouse-server/config.d/chlift.xml
+node-b: wrote /etc/clickhouse-server/users.d/chlift.xml
+node-b: wrote /etc/chlift/client.xml
+node-c: ClickHouse 26.3.40.16 installed
+node-c: wrote /etc/clickhouse-keeper/keeper_config.xml
+node-c: wrote /etc/chlift/client.xml
+node-c: clickhouse-keeper restarted
+node-a: clickhouse-server restarted
+node-b: clickhouse-server restarted
+peer: wrote /tmp/chlift-demo/peerdb/compose.yml
+peer: wrote /tmp/chlift-demo/peerdb/.env
+peer: wrote /tmp/chlift-demo/peerdb/s3.json
+peer: wrote /tmp/chlift-demo/peerdb/dynamicconfig.yaml
+peer: wrote /tmp/chlift-demo/peerdb/search-attr.sh
+peer: peerdb stable-v0.37.10 running (api on a localhost port of compose project chlift-peerdb), staging http://chlift-s3:8333/peerdb
+ok   node-a: keeper answers: state follower
+ok   node-b: keeper answers: state follower
+ok   node-c: keeper answers: state leader
+ok   keeper quorum: 3 member(s), 1 leader(s), 2/2 followers synced
+ok   node-a: clickhouse answers: 26.3.40.16
+ok   node-a: no read-only replicas: read-only replicas: 0
+ok   node-b: clickhouse answers: 26.3.40.16
+ok   node-b: no read-only replicas: read-only replicas: 0
+ok   replication: insert on node-a, read on every replica: row seen on node-a, node-b
+ok   peer: peerdb api answers: 
+ok   node-a: clickhouse reads/writes the peerdb staging bucket: http://chlift-s3:8333 
+ok   node-b: clickhouse reads/writes the peerdb staging bucket: http://chlift-s3:8333 
+
+real	2m22.437s
+user	0m0.887s
+sys	0m1.094s

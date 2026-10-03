@@ -1,0 +1,9 @@
+{"version": 2, "width": 100, "height": 28, "timestamp": 1791045694, "env": {"SHELL": "/bin/bash", "TERM": "xterm-256color"}}
+[0.020132, "o", "\u001b[H\u001b[2J\u001b[3J"]
+[0.023002, "o", "\u001b[1;32m$\u001b[0m \u001b[1mtime chlift migrate check --checksums\u001b[0m\r\n"]
+[32.68472, "o", "ok   public.user_events: postgres 8047000 rows; replicas map[node-a:8047000 node-b:8047000] \r\nok   public.request_logs: postgres 4000000 rows; replicas map[node-a:4000000 node-b:4000000] \r\nok   public.system_logs: postgres 1998000 rows; replicas map[node-a:1998000 node-b:1998000] \r\n"]
+[52.237579, "o", "checksum public.user_events: 64 buckets x 6 columns (count, id, account_id, user_id, event_time, kind), 0 differ"]
+[52.238922, "o", "\r\n"]
+[62.056042, "o", "checksum public.request_logs: 64 buckets x 9 columns (count, id, account_id, created_at, method, path, status, duration_ms, user_agent), 0 differ\r\n"]
+[66.705265, "o", "checksum public.system_logs: 64 buckets x 6 columns (count, id, logged_at, level, service, message), 0 differ\r\n"]
+[66.731216, "o", "\r\nreal\t1m5.705s\r\nuser\t0m0.074s\r\nsys\t0m0.105s\r\n"]
