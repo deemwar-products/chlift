@@ -14,6 +14,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"io"
 	"math"
 	"math/rand/v2"
 	"os"
@@ -251,4 +252,19 @@ func NewSQL(db *sql.DB) Runner {
 		}
 		return out, rows.Err()
 	}
+}
+
+// WritePrometheus writes the shadow metrics in Prometheus text format (serve it from your /metrics handler).
+// Names match chlift's dashboard: migration_shadow_mismatch_total and migration_query_latency_seconds{store}.
+func (c *Client) WritePrometheus(w io.Writer) {
+	s := c.Stats()
+	fmt.Fprintf(w, "# TYPE migration_reads_total counter\nmigration_reads_total{mode=%q} %d\n", c.Mode, s.Reads)
+	fmt.Fprintf(w, "# TYPE migration_shadow_reads_total counter\nmigration_shadow_reads_total %d\n", s.Shadowed)
+	fmt.Fprintf(w, "# TYPE migration_shadow_mismatch_total counter\nmigration_shadow_mismatch_total %d\n", s.Mismatches)
+	fmt.Fprintf(w, "# TYPE migration_shadow_errors_total counter\nmigration_shadow_errors_total %d\n", s.ShadowErrors)
+	fmt.Fprintf(w, "# TYPE migration_query_latency_seconds_sum counter\n")
+	fmt.Fprintf(w, "migration_query_latency_seconds_sum{store=\"postgres\"} %g\n", s.PostgresTime.Seconds())
+	fmt.Fprintf(w, "migration_query_latency_seconds_sum{store=\"clickhouse\"} %g\n", s.ClickHouseTime.Seconds())
+	fmt.Fprintf(w, "migration_query_latency_seconds_count{store=\"postgres\"} %d\n", s.Shadowed-s.ShadowErrors)
+	fmt.Fprintf(w, "migration_query_latency_seconds_count{store=\"clickhouse\"} %d\n", s.Shadowed-s.ShadowErrors)
 }
