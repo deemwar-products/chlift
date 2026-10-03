@@ -7,3 +7,6 @@
   records one step, and `all.sh` ran them in order.
 - `bench-raw.json` + `bench_table.py`: every benchmark sample, and the script that recomputes the published table
   from them.
+- `claims.tsv` + `verify_numbers.py`: every figure in `numbers.md` is matched to the exact log line it comes from (a pair
+  must come from one line), and the latency table is recomputed from `bench-raw.json`. CI fails on any mismatch, and on
+  any large number that no claim covers.
