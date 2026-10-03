@@ -48,6 +48,10 @@ chlift migrate check --checksums # every day and every PK range, on every replic
 chlift migrate cutover           # watermark, final proof, stop CDC, drop the slot; ClickHouse keeps the data
 ```
 
+`chlift migrate exporter` serves Prometheus metrics for a running migration: mirror state, replication-slot WAL, rows
+in Postgres vs each replica, and the per-day check (run only once the mirror has been RUNNING for 2 minutes). A
+Grafana dashboard is in `deploy/grafana/`.
+
 `--json` gives machine-readable output on every command. Secrets are generated into a 0600 file and never printed.
 
 ## Switching reads safely: the Go SDK

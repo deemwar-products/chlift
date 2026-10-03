@@ -1,0 +1,269 @@
+{
+  "uid": "chlift-migration",
+  "title": "chlift migration",
+  "schemaVersion": 39,
+  "time": {
+    "from": "now-3h",
+    "to": "now"
+  },
+  "refresh": "30s",
+  "description": "Postgres -> ClickHouse migration: replication health, parity and the read switch. From chlift migrate exporter and the chlift SDK.",
+  "panels": [
+    {
+      "id": 1,
+      "title": "Mirror running (PeerDB)",
+      "type": "stat",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "chlift-prom"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 0,
+        "w": 6,
+        "h": 5
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "chlift-prom"
+          },
+          "expr": "chlift_mirror_up",
+          "legendFormat": "{{mirror}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "red",
+                "value": null
+              },
+              {
+                "color": "green",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 2,
+      "title": "Days that differ (settled days)",
+      "type": "stat",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "chlift-prom"
+      },
+      "gridPos": {
+        "x": 6,
+        "y": 0,
+        "w": 6,
+        "h": 5
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "chlift-prom"
+          },
+          "expr": "sum(migration_reconcile_mismatch_days)",
+          "legendFormat": ""
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 3,
+      "title": "Shadow read mismatches",
+      "type": "stat",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "chlift-prom"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 0,
+        "w": 6,
+        "h": 5
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "chlift-prom"
+          },
+          "expr": "sum(migration_shadow_mismatch_total)",
+          "legendFormat": ""
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "thresholds": {
+            "mode": "absolute",
+            "steps": [
+              {
+                "color": "green",
+                "value": null
+              },
+              {
+                "color": "red",
+                "value": 1
+              }
+            ]
+          }
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 4,
+      "title": "WAL held by the replication slot",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "chlift-prom"
+      },
+      "gridPos": {
+        "x": 18,
+        "y": 0,
+        "w": 6,
+        "h": 5
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "chlift-prom"
+          },
+          "expr": "chlift_slot_retained_wal_bytes",
+          "legendFormat": "{{mirror}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "bytes"
+        },
+        "overrides": []
+      }
+    },
+    {
+      "id": 5,
+      "title": "Rows: Postgres vs each replica",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "chlift-prom"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 5,
+        "w": 12,
+        "h": 9
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "chlift-prom"
+          },
+          "expr": "chlift_table_rows",
+          "legendFormat": "{{table}} {{store}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      }
+    },
+    {
+      "id": 6,
+      "title": "CDC rows applied per second",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "chlift-prom"
+      },
+      "gridPos": {
+        "x": 12,
+        "y": 5,
+        "w": 12,
+        "h": 9
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "chlift-prom"
+          },
+          "expr": "rate(chlift_cdc_rows_synced[5m])",
+          "legendFormat": "{{mirror}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      }
+    },
+    {
+      "id": 7,
+      "title": "Average read latency by store (shadowed reads)",
+      "type": "timeseries",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "chlift-prom"
+      },
+      "gridPos": {
+        "x": 0,
+        "y": 14,
+        "w": 24,
+        "h": 8
+      },
+      "targets": [
+        {
+          "refId": "A",
+          "datasource": {
+            "type": "prometheus",
+            "uid": "chlift-prom"
+          },
+          "expr": "rate(migration_query_latency_seconds_sum[5m]) / rate(migration_query_latency_seconds_count[5m])",
+          "legendFormat": "{{store}}"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {
+          "unit": "s"
+        },
+        "overrides": []
+      }
+    }
+  ]
+}

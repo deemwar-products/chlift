@@ -13,6 +13,7 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
 	"os"
 	"os/signal"
 	"strings"
@@ -67,7 +68,7 @@ func main() {
 
 func usage() {
 	fmt.Fprintln(os.Stderr, `usage: chlift <init|plan|install|verify|migrate|seed|version> [flags]
-       chlift migrate <plan|start|status|check|bench|cutover|abort> [flags]
+       chlift migrate <plan|start|status|check|bench|cutover|abort|exporter> [flags]
 chlift is free and MIT licensed. Paid installation, support and training: io@deemwar.com`)
 }
 
@@ -344,6 +345,8 @@ func cmdMigrate(ctx context.Context, args []string) error {
 	rawOut := fs.String("out", "bench-raw.json", "where bench writes every raw sample (bench)")
 	mirror := fs.String("mirror", "", "mirror name (plan); default chlift_<cluster>")
 	database := fs.String("database", "chlift", "ClickHouse database (plan)")
+	listen := fs.String("listen", "127.0.0.1:9465", "metrics address (exporter)")
+	checkEvery := fs.Duration("check-interval", 10*time.Minute, "how often the exporter runs the per-day check")
 	fs.Parse(args[1:])
 	c, err := config.Load(*path)
 	if err != nil {
@@ -412,6 +415,12 @@ func cmdMigrate(ctx context.Context, args []string) error {
 		return migrate.Abort(ctx, e, p)
 	case "cutover":
 		return migrate.Cutover(ctx, e, p)
+	case "exporter":
+		x := &migrate.Exporter{Env: e, Plan: p, CheckInterval: *checkEvery}
+		e.Log = io.Discard
+		x.Env.Log = io.Discard
+		fmt.Printf("chlift exporter for mirror %s on http://%s/metrics (per-day check every %s)\n", p.Mirror, *listen, *checkEvery)
+		return x.Run(ctx, *listen)
 	case "bench":
 		res, err := migrate.Bench(ctx, dsn, e.CH[0], p.Database, *runs)
 		if err != nil {
