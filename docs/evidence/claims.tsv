@@ -1,0 +1,22 @@
+# Each published figure: the exact text in numbers.md <TAB> the log it comes from <TAB> regex(es) that must match ONE line
+# each (several regexes separated by " && " must each match some line). A pair of numbers in one regex must come from
+# the same log line, so mis-paired figures fail. Run: python3 verify_numbers.py
+2.6 GB	casts/00-seed.log	^\s*2616 MB$
+2 min 22 s	casts/01-install.log	^real\s+2m22\.\d+s$
+14,000,000 rows	casts/03-migrate-start.log	user_events\s+postgres ~\d+\s+node-a 8000000\s+node-b 8000000 && request_logs\s+postgres ~\d+\s+node-a 4000000\s+node-b 4000000 && system_logs\s+postgres ~\d+\s+node-a 2000000\s+node-b 2000000
+(8,000,000 + 4,000,000 + 2,000,000)	casts/03-migrate-start.log	node-a 8000000\s+node-b 8000000 && node-a 4000000\s+node-b 4000000 && node-a 2000000\s+node-b 2000000
+`date` 16:37:45	casts/03-migrate-start.log	^16:37:45$
+`date` 16:40:11	casts/03-migrate-start.log	^16:40:11$
+50,000 inserts	casts/04-cdc.log	^INSERT 0 50000$
+1,000 updates	casts/04-cdc.log	^UPDATE 1000$
+5,000 deletes	casts/04-cdc.log	^DELETE 3000$ && ^DELETE 2000$
+56,000 rows synced by CDC	casts/04-cdc.log	RUNNING, 56000 rows synced by CDC
+(8,047,000 / 4,000,000 / 1,998,000 live rows)	casts/05-migrate-check.log	^ok\s+public\.user_events: postgres 8047000 rows; replicas map\[node-a:8047000 node-b:8047000\] && ^ok\s+public\.request_logs: postgres 4000000 rows; replicas map\[node-a:4000000 node-b:4000000\] && ^ok\s+public\.system_logs: postgres 1998000 rows; replicas map\[node-a:1998000 node-b:1998000\]
+**0 of 64** primary-key-range checksum buckets differ per table	casts/05-migrate-check.log	user_events: 64 buckets .* 0 differ$ && request_logs: 64 buckets .* 0 differ$ && system_logs: 64 buckets .* 0 differ$
+after 4,000 updates and 1,000 deletes	casts/07-corruption-repro.log	^UPDATE 4000$ && ^DELETE 1000$
+Postgres has 19,000 rows and **both** replicas 20,000	casts/07-corruption-repro.log	^FAIL\s+public\.notes_demo: postgres 19000 rows; replicas map\[node-a:20000 node-b:20000\]
+bucket 1298..1594: 124,215 in Postgres vs 1,335 in ClickHouse	casts/07-corruption-repro.log	bucket id 1298\.\.1594: pg=\[[^]]*\|124215\] node-a=\[[^]]*\|1335\] node-b=\[[^]]*\|1335\]
+(`1001..1297`, 593)	casts/07-corruption-repro.log	bucket id 1001\.\.1297: pg=\[297\|.*node-a=\[593\|
+18,000 = 18,000 = 18,000, **0 of 64** buckets differ	casts/07-corruption-repro.log	^ok\s+public\.notes_demo: postgres 18000 rows; replicas map\[node-a:18000 node-b:18000\] && notes_demo: 64 buckets .* 0 differ$
+(**0 of 64 buckets differ** on all 3 tables)	casts/08-cutover.log	user_events: 64 buckets .* 0 differ$ && request_logs: 64 buckets .* 0 differ$ && system_logs: 64 buckets .* 0 differ$
+**1 min 52 s**	casts/08-cutover.log	^real\s+1m51\.\d+s$
