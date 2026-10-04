@@ -73,8 +73,8 @@ Grafana dashboard is in `deploy/grafana/`.
 
 ## What it requires
 
-- Hosts: Debian/Ubuntu (tested) or RHEL-family (written, not yet tested), SSH key access, and Docker with compose v2
-  on the PeerDB host.
+- Hosts: Debian/Ubuntu (tested) or RHEL-family (tested on Rocky Linux 9 without systemd; RHEL with systemd not yet
+  tested), SSH key access, and Docker with compose v2 on the PeerDB host.
 - Postgres 12+ with `wal_level=logical`. Set `max_slot_wal_keep_size`, so a stalled mirror can't fill the disk.
 - ClickHouse from the official LTS packages, the same pinned build on every host.
 - **Memory per ClickHouse replica: 16 GB minimum, 32 GB+ for production** (ClickHouse's own guidance). The soak ran at

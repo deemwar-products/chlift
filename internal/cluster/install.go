@@ -179,7 +179,9 @@ if [ ! -f /etc/yum.repos.d/clickhouse.repo ]; then
   (dnf install -y -q dnf-plugins-core || yum install -y -q yum-utils) >/dev/null
   (dnf config-manager --add-repo https://packages.clickhouse.com/rpm/clickhouse.repo || yum-config-manager --add-repo https://packages.clickhouse.com/rpm/clickhouse.repo) >/dev/null
 fi
-yum --showduplicates list clickhouse-common-static 2>/dev/null | awk '{print $2}' | grep '^%[1]s\.' | sort -V | tail -1`, line)
+# Import the repo key up front: without it the first yum call asks to import it, gets no answer, and fails.
+rpm -q gpg-pubkey --qf '%%{SUMMARY}\n' | grep -qi clickhouse || rpm --import https://packages.clickhouse.com/rpm/stable/repodata/repomd.xml.key
+yum -y --showduplicates list clickhouse-common-static 2>/dev/null | awk '{print $2}' | grep '^%[1]s\.' | sort -V | tail -1`, line)
 	}
 	v, err := n.SSH.Run(ctx, script)
 	if err == nil && v == "" {
@@ -225,6 +227,8 @@ if [ ! -f /etc/yum.repos.d/clickhouse.repo ]; then
   (dnf install -y -q dnf-plugins-core || yum install -y -q yum-utils) >/dev/null
   (dnf config-manager --add-repo https://packages.clickhouse.com/rpm/clickhouse.repo || yum-config-manager --add-repo https://packages.clickhouse.com/rpm/clickhouse.repo) >/dev/null
 fi
+# Import the repo key up front: without it the first yum call asks to import it, gets no answer, and fails.
+rpm -q gpg-pubkey --qf '%%{SUMMARY}\n' | grep -qi clickhouse || rpm --import https://packages.clickhouse.com/rpm/stable/repodata/repomd.xml.key
 V=%[2]s
 C=same
 if [ "$(rpm -q --qf '%%{VERSION}' %[1]s 2>/dev/null || true)" != "$V" ]; then
