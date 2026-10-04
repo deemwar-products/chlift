@@ -10,7 +10,7 @@ cd "$(dirname "$0")"
 DIR="${SOAK_RESULTS_DIR:-$HOME/chlift-local/soak/results}"; LOG="$DIR/disk.log"
 STOP_RUNNER_GB=${STOP_RUNNER_GB:-4}; STOP_ALL_GB=${STOP_ALL_GB:-2.5}
 PAUSE_MEM_GB=${PAUSE_MEM_GB:-6}; PAUSE_LOAD=${PAUSE_LOAD:-8}; RESUME_MEM_GB=${RESUME_MEM_GB:-8}; RESUME_LOAD=${RESUME_LOAD:-6}
-PROJECT=chlift-soak
+PROJECT=${PROJECT:-chlift-soak}
 ids() { docker ps -q --filter "label=com.docker.compose.project=$PROJECT" "$@"; }
 lt() { awk -v a="$1" -v b="$2" 'BEGIN{exit !(a<b)}'; }
 log() { echo "$(date -u +%FT%TZ) $*" >> "$LOG"; }

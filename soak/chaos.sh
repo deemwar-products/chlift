@@ -4,7 +4,7 @@
 # must match exactly one container, and is acted on by ID. No name patterns, no `docker ps -q` sweeps, no prune.
 cd "$(dirname "$0")"
 LOG="${SOAK_RESULTS_DIR:-$HOME/chlift-local/soak/results}/chaos.log"
-PROJECT=chlift-soak
+PROJECT=${PROJECT:-chlift-soak}
 log() { echo "$(date -u +%FT%TZ) $*" >> "$LOG"; }
 target() {
   ids=$(docker ps -aq --filter "label=com.docker.compose.project=$PROJECT" --filter "label=com.docker.compose.service=$1")

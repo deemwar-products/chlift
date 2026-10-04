@@ -132,7 +132,9 @@ services:
     volumes:
       - ./temporal/search-attr.sh:/etc/temporal/entrypoint.sh:ro
     healthcheck:
-      test: ["CMD", "tctl", "workflow", "list"]
+      # healthy only once PeerDB's search attribute is registered: without it the first mirror create fails (HTTP 500)
+      # but PeerDB still records the flow, so every retry gets 409 "flow already exists" and setup never finishes.
+      test: ["CMD-SHELL", "temporal operator search-attribute list | grep -qw MirrorName"]
       interval: 2s
       retries: 60
 
