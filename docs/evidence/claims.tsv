@@ -20,3 +20,11 @@ bucket 1298..1594: 124,215 in Postgres vs 1,335 in ClickHouse	casts/07-corruptio
 18,000 = 18,000 = 18,000, **0 of 64** buckets differ	casts/07-corruption-repro.log	^ok\s+public\.notes_demo: postgres 18000 rows; replicas map\[node-a:18000 node-b:18000\] && notes_demo: 64 buckets .* 0 differ$
 (**0 of 64 buckets differ** on all 3 tables)	casts/08-cutover.log	user_events: 64 buckets .* 0 differ$ && request_logs: 64 buckets .* 0 differ$ && system_logs: 64 buckets .* 0 differ$
 **1 min 52 s**	casts/08-cutover.log	^real\s+1m51\.\d+s$
+20.4 h	soak/verdict.txt	^Valid soak time: 20\.4 h
+28 faults	soak/verdict.txt	\(total 28\)$
+2 of 116 cycles	soak/verdict.txt	^safe layout: 116 cycles counted, freshness misses in 2 \(72, 82\)$
+p50 10 s, p99 281 s, max 285 s	soak/verdict.txt	^safe matched waits: p50 10 s, p99 281 s, max 285 s$
+**1.12 GiB**	soak/querylog-c116-ch1.tsv	\t241\t.*maximum: 1\.12 GiB
+**76%**	soak/verdict.txt	busy \(valid time, contention excluded\): mean 76%, p90 94%$
+**57 rows/s**	soak/verdict.txt	^source events insert rate: 57 rows/s average$
+Every cycle with a mismatch was followed by a cycle in which every check matched exactly	soak/verdict.txt	^Miss cycles and recovery \(next cycle all exact\?\): 72->yes, 82->yes, 116->yes$ && ^INTEGRITY: PASS
