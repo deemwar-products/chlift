@@ -92,13 +92,20 @@ func Bench(ctx context.Context, dsn string, ch *cluster.Node, db string, runs in
 }
 
 func chTime(ctx context.Context, n *cluster.Node, q string) (float64, error) {
-	// --time prints the elapsed seconds on stderr; keep only that line.
-	out, err := n.SSH.Run(ctx, "clickhouse-client --config-file=/etc/chlift/client.xml --time --format Null -q "+shellQuote(q)+" 2>&1 >/dev/null | tail -1")
+	// --time prints the elapsed seconds on stderr; keep only that line. A failed query must surface its own error
+	// (e.g. Code 241, memory limit), so the exit status is kept and the client's output goes to stderr on failure.
+	out, err := n.SSH.Run(ctx, chTimeScript(q))
 	if err != nil {
 		return 0, err
 	}
 	s, err := strconv.ParseFloat(strings.TrimSpace(out), 64)
 	return s * 1000, err
+}
+
+// chTimeScript runs q and prints only the elapsed-seconds line; on failure it exits non-zero with the client's output on stderr.
+func chTimeScript(q string) string {
+	return "out=$(clickhouse-client --config-file=/etc/chlift/client.xml --time --format Null -q " + shellQuote(q) +
+		" 2>&1 >/dev/null) || { printf '%s\\n' \"$out\" >&2; exit 1; }; printf '%s\\n' \"$out\" | tail -1"
 }
 
 // median of an odd-length sample (runs is odd by default); the input is not modified.
