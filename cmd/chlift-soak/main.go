@@ -57,6 +57,8 @@ var (
 
 func main() {
 	ctx := context.Background()
+	variants = selectVariants(variants, os.Getenv("SOAK_VARIANTS"))
+	log.Printf("layouts under test: %v", variantNames(variants))
 	must(os.MkdirAll(resultsDir, 0o755))
 	pg := retry("postgres", func() (*pgxpool.Pool, error) {
 		p, err := pgxpool.New(ctx, pgURL)
@@ -430,4 +432,34 @@ func must(err error) {
 	if err != nil {
 		log.Fatal(err)
 	}
+}
+
+// selectVariants keeps the layouts named in a comma-separated list (SOAK_VARIANTS, e.g. "safe"); empty keeps all.
+// An unknown name is fatal, so a typo cannot silently run nothing.
+func selectVariants(all []variant, list string) []variant {
+	if strings.TrimSpace(list) == "" {
+		return all
+	}
+	var out []variant
+	for _, name := range strings.Split(list, ",") {
+		name = strings.TrimSpace(name)
+		found := false
+		for _, v := range all {
+			if v.Name == name {
+				out, found = append(out, v), true
+			}
+		}
+		if !found {
+			log.Fatalf("SOAK_VARIANTS: unknown layout %q (known: %v)", name, variantNames(all))
+		}
+	}
+	return out
+}
+
+func variantNames(vs []variant) []string {
+	var n []string
+	for _, v := range vs {
+		n = append(n, v.Name)
+	}
+	return n
 }
