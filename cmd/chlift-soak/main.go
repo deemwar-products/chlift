@@ -314,8 +314,22 @@ func chRow(ctx context.Context, host, q string) (string, error) {
 		return "", err
 	}
 	defer rows.Close()
-	cols := len(rows.Columns())
+	return firstRow(rows, len(rows.Columns()))
+}
+
+type rowIter interface {
+	Next() bool
+	Scan(...any) error
+	Err() error
+}
+
+// firstRow joins the first row's columns with "|".
+func firstRow(rows rowIter, cols int) (string, error) {
 	if !rows.Next() {
+		// An aggregate always returns one row: no row means the query failed while streaming. Keep the real error.
+		if err := rows.Err(); err != nil {
+			return "", err
+		}
 		return "", fmt.Errorf("no rows")
 	}
 	vals := make([]string, cols)
