@@ -76,3 +76,46 @@ minutes, or restart PeerDB's pinned host.
 | 15 | Freshness, `clusq`/`clusnq` (PeerDB cluster mode, not used by chlift): also missed in cycle 116 at normal load, 23 minutes after a replica restart, about a thousand events rows behind on both replicas; matched exactly in the next cycle | `soak/verdict.txt`, `soak/checks.ndjson` | |
 | 16 | **4 query errors, all ClickHouse Code 241 (memory limit)** at **1.12 GiB** (0.75 × the 1.5 GB cap): `clusq` in cycles 72 (both replicas) and 82, `clusnq` in cycle 116. `safe` had none | `soak/querylog-*.tsv` (ClickHouse `system.query_log`) | The 3 layouts share the same 2 servers, so this is a server memory limit, not a layout property. Below ClickHouse's 16 GB guidance. |
 | 17 | Load: the soak's 2 cores were **76%** busy on average, **94%** at p90, with the source taking **57 rows/s** of inserts on average | `soak/verdict.txt`, `soak/contention.log` | Three mirrors read the same source, so the CDC work was 3× one mirror's. |
+
+## Postgres vs ClickHouse vs DuckDB (rerun 2026-10-04)
+
+A fresh run of the same 4 queries as rows 9 and 11, with DuckDB added two ways. All five columns come from **one
+invocation** (`bench4.sh`), on the same synthetic data (8,047,000 user_events rows and 4,000,000 request_logs rows,
+the state after the recording above), with **5 runs per query, median shown**. Raw samples: `bench4-raw.json`;
+recompute: `python3 bench4_table.py bench4-raw.json`.
+- DuckDB **reading Postgres** runs the Postgres SQL text unchanged through DuckDB's `postgres` extension. It pulls the
+  rows from Postgres for every query.
+- DuckDB **on a Parquet copy** first copies the two tables to local Parquet: **22.8 s**, **541 MB**.
+- Every query returned the same number of result rows in Postgres and in both DuckDB modes.
+
+| Query (median ms) | Postgres | ClickHouse FINAL | ClickHouse | DuckDB reading Postgres | DuckDB on Parquet copy |
+|---|---|---|---|---|---|
+| Daily active users, last 30 days | 8,426 | 907 | 318 | 6,382 | 407 |
+| Events per kind per week, 6 months | 20,571 | 1,025 | 447 | 7,906 | 1,513 |
+| Top 10 accounts by events, last 7 days | 518 | 589 | 220 | 6,096 | 49 |
+| p95 latency per endpoint, last 30 days | 3,658 | 693 | 230 | 1,952 | 59 |
+
+Against Postgres:
+- ClickHouse with `FINAL` (while replicating): **0.9× to 20.1×**.
+- ClickHouse without `FINAL` (after cutover): **2.4× to 46.0×**.
+- DuckDB reading Postgres: **0.1× to 2.6×**.
+- DuckDB on the Parquet copy: **10.6× to 62.0×**.
+
+**Caveats:**
+- **Shared server:** one shared 8-core server, with other jobs running. The load average was 8 to 23 and CPU pressure
+  33% to 69% during the run (logged in `bench4-raw.json`). It was higher during the DuckDB part than during Postgres
+  and ClickHouse.
+- **Memory:**
+  - Postgres: 768 MB container.
+  - ClickHouse: 3 GB per replica. That was raised from 1.5 GB because, at 1.5 GB, this benchmark's own ClickHouse
+    query failed with Code 241 (memory limit).
+  - DuckDB: `memory_limit` 2 GB, on 4 CPUs.
+- **Time measurement differs by engine:** Postgres from the client, including sending the result; ClickHouse is the
+  server's own elapsed time; DuckDB is the CLI's wall time per query.
+- **Not comparable with rows 9 and 11:** ClickHouse was restarted 4 minutes before this run, the load was different,
+  and the memory sizes differ. Compare columns within this table only.
+- **DuckDB is embedded:** a single process, with no replication and no change data capture. The Parquet copy is a
+  snapshot, stale as soon as Postgres changes; keeping it fresh is a separate pipeline. ClickHouse here is a
+  2-replica cluster kept current by CDC.
+- The 7-day query reads a short window of this data, so Postgres is fast on it and ClickHouse `FINAL` is slower
+  (0.9×).

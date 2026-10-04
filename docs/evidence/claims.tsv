@@ -28,3 +28,6 @@ p50 10 s, p99 281 s, max 285 s	soak/verdict.txt	^safe matched waits: p50 10 s, p
 **76%**	soak/verdict.txt	busy \(valid time, contention excluded\): mean 76%, p90 94%$
 **57 rows/s**	soak/verdict.txt	^source events insert rate: 57 rows/s average$
 Every cycle with a mismatch was followed by a cycle in which every check matched exactly	soak/verdict.txt	^Miss cycles and recovery \(next cycle all exact\?\): 72->yes, 82->yes, 116->yes$ && ^INTEGRITY: PASS
+**22.8 s**	bench4-raw.json	"parquet_copy_seconds": 22\.8,
+**541 MB**	bench4-raw.json	"parquet_bytes": 541\d{6},
+8,047,000 user_events rows and 4,000,000 request_logs rows	casts/05-migrate-check.log	8,?047,?000 && 4,?000,?000
