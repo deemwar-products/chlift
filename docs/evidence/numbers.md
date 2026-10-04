@@ -1,7 +1,7 @@
 # chlift: numbers we publish, and where each one comes from
 
-Everything below comes from one recorded run on 2026-10-03 (UTC), starting from empty nodes and an empty
-ClickHouse. The terminal recordings are in `casts/` (asciinema v2, real timing). Each `.log` beside a cast is the
+Everything below, except the replication soak section at the end, comes from one recorded run on 2026-10-03
+(UTC), starting from empty nodes and an empty ClickHouse. The terminal recordings are in `casts/` (asciinema v2, real timing). Each `.log` beside a cast is the
 same output as plain text. The commands are in `steps/`: each step script prints a command and then runs it. Nothing
 on screen was typed or edited by hand.
 
@@ -47,5 +47,32 @@ Per query (median of 5 runs, ms; Postgres / ClickHouse FINAL / ClickHouse):
   and abort/cutover drop them.
 
 **Not claimed:** the PeerDB issue #4746 (row loss with a Distributed target) has not been reproduced by us. chlift
-avoids that layout. The replication soak under faults is still running; until it passes, replicated targets are
-"preview".
+avoids that layout. The replication soak is below.
+
+## Replication soak (2026-10-03 to 04)
+
+**Question:** under injected failures, does PeerDB keep every row on every replica of a replicated ClickHouse target?
+Raw data and the script that recomputes everything here are in [`soak/`](soak/): run `python3 soak/soak_tally.py
+--verdict`. Its output is `soak/verdict.txt`.
+
+**Setup:** one Postgres source, 3 PeerDB mirrors into the same 2 ClickHouse replicas plus a 3-member Keeper. One mirror
+per target layout:
+- `safe`: a `Replicated` database, no PeerDB cluster setting. This is the layout `chlift migrate start` creates.
+- `clusq` and `clusnq`: PeerDB's cluster mode, with and without quorum writes.
+
+The whole stack (Postgres, PeerDB, both replicas, Keeper, staging) ran pinned to **2 CPU cores**, with **1.5 GB** per
+ClickHouse replica.
+
+**Workload and checks:** a 10-minute mixed workload per cycle: steady inserts, updates and deletes, plus one large
+transaction. Then Postgres and every replica are compared (row counts and column sums), with up to 5 minutes for CDC to
+catch up. A fault every 40 minutes: restart a replica, restart PeerDB's flow worker, stop a Keeper member for 10
+minutes, or restart PeerDB's pinned host.
+
+| # | Figure | Source | Caveat |
+|---|---|---|---|
+| 12 | **Integrity: no lost or corrupted rows** in **20.4 h** of counted time, across **28 faults**, on all three layouts and both replicas. Every cycle with a mismatch was followed by a cycle in which every check matched exactly | `soak/verdict.txt` | Counted time excludes 06:00–06:41 UTC, when an unrelated job overloaded the shared server and the soak was paused. 10:09–11:20 UTC is counted but labelled: other jobs shared the soak's cores; 0 mismatches there. |
+| 13 | Freshness, `safe` (chlift's layout): ClickHouse missed the 5-minute window in **2 of 116 cycles**: cycle 72 (lag on the 2-core budget) and cycle 82 (catching up right after the 27-minute pause). The next cycle matched exactly both times | `soak/verdict.txt` | |
+| 14 | `safe` catch-up time when matched: **p50 10 s, p99 281 s, max 285 s** of the 300 s window | `soak/verdict.txt` | Thin headroom on 2 cores: see the requirements in the README. |
+| 15 | Freshness, `clusq`/`clusnq` (PeerDB cluster mode, not used by chlift): also missed in cycle 116 at normal load, 23 minutes after a replica restart, about a thousand events rows behind on both replicas; matched exactly in the next cycle | `soak/verdict.txt`, `soak/checks.ndjson` | |
+| 16 | **4 query errors, all ClickHouse Code 241 (memory limit)** at **1.12 GiB** (0.75 × the 1.5 GB cap): `clusq` in cycles 72 (both replicas) and 82, `clusnq` in cycle 116. `safe` had none | `soak/querylog-*.tsv` (ClickHouse `system.query_log`) | The 3 layouts share the same 2 servers, so this is a server memory limit, not a layout property. Below ClickHouse's 16 GB guidance. |
+| 17 | Load: the soak's 2 cores were **76%** busy on average, **94%** at p90, with the source taking **57 rows/s** of inserts on average | `soak/verdict.txt`, `soak/contention.log` | Three mirrors read the same source, so the CDC work was 3× one mirror's. |

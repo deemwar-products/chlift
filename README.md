@@ -1,7 +1,8 @@
 # chlift
 
-> **Preview.** The replication soak (PeerDB into a 2-replica ClickHouse cluster under faults) is still running. Until it
-> passes, treat replicated targets as preview. The results so far are in [`docs/evidence/`](docs/evidence/).
+> **Replication soak: passed.** 20.4 hours of injected failures (28 replica, worker and Keeper faults), no lost or corrupted
+> rows. Replicated targets in the layout chlift creates are no longer preview. Where ClickHouse lagged and why, and the
+> hardware it needs: [soak results](docs/evidence/numbers.md#replication-soak-2026-10-03-to-04).
 
 **Move your Postgres event tables into a self-hosted, replicated ClickHouse cluster, and prove nothing was lost.**
 
@@ -71,6 +72,14 @@ Grafana dashboard is in `deploy/grafana/`.
   on the PeerDB host.
 - Postgres 12+ with `wal_level=logical`. Set `max_slot_wal_keep_size`, so a stalled mirror can't fill the disk.
 - ClickHouse from the official LTS packages, the same pinned build on every host.
+- **Memory per ClickHouse replica: 16 GB minimum, 32 GB+ for production** (ClickHouse's own guidance). The soak ran at
+  1.5 GB per replica and hit ClickHouse memory-limit errors (Code 241) on its verification queries once the tables held
+  a few million rows. Sizes between 1.5 GB and 16 GB were not tested.
+- **CPU: 2 dedicated cores per mirror** (PeerDB plus the replicas it writes into) at up to about 60 inserted rows/s
+  with steady updates and deletes. Add cores in proportion to your write rate. The soak ran 3 mirrors on 2 cores in
+  total. It never lost a row, but chlift's layout fell behind the 5-minute freshness window in 2 of 116 cycles, and once
+  needed 285 of the 300 seconds. The 2-cores-per-mirror figure is about 3× the soak's measured peak demand. It is
+  derived from the soak, not yet soak-tested at that size.
 
 ## Amazon RDS / Aurora PostgreSQL
 
@@ -85,7 +94,8 @@ differ).
 
 ## Limits today
 
-- **Preview:** replicated targets wait on the soak verdict.
+- PeerDB's own ClickHouse cluster mode (with or without quorum writes) is not what chlift uses. It stays untested for
+  production: in the soak it lagged past 5 minutes at normal load.
 - One Postgres table maps to one ClickHouse table. No automatic denormalisation of joins.
 - Sort key and partitioning can't change after the first snapshot (a PeerDB limit). Review the plan before
   `migrate start`.

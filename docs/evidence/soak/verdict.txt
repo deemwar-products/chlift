@@ -1,0 +1,34 @@
+contention clusnq {'checks': 24}
+contention clusq {'checks': 24}
+contention safe {'checks': 24}
+excluded clusnq {'checks': 8}
+excluded clusq {'checks': 8}
+excluded safe {'checks': 6}
+valid clusnq {'checks': 436, 'lag_miss': 7, 'miss_cycles_82': 4, 'miss_cycles_116': 4, 'query_error': 1}
+valid clusq {'checks': 436, 'query_error': 3, 'miss_cycles_72': 2, 'lag_miss': 7, 'miss_cycles_82': 4, 'miss_cycles_116': 4}
+valid safe {'checks': 438, 'lag_miss': 8, 'miss_cycles_72': 4, 'miss_cycles_82': 4}
+contention cycle 102 2026-10-04T10:16:35Z 12 checks 0 misses, max wait 9 s
+contention cycle 103 2026-10-04T10:27:02Z 12 checks 0 misses, max wait 90 s
+contention cycle 104 2026-10-04T10:38:32Z 12 checks 0 misses, max wait 35 s
+contention cycle 105 2026-10-04T10:49:16Z 12 checks 0 misses, max wait 27 s
+contention cycle 106 2026-10-04T10:59:54Z 12 checks 0 misses, max wait 41 s
+contention cycle 107 2026-10-04T11:10:29Z 12 checks 0 misses, max wait 134 s
+last ts 2026-10-04T13:08:45Z last cycle 117
+
+## Verdict numbers (soak_tally.py --verdict, last check 2026-10-04T13:08:45Z, cycle 117)
+
+Valid soak time: 20.4 h (16:02Z-06:00Z + 06:41:07Z-13:08:45Z), of which 1.2 h host contention (10:09-11:20Z).
+
+| Layout | Valid checks | Exact | Lag misses | Query errors (Code 241) |
+|---|---|---|---|---|
+| `safe` | 462 | 454 | 8 | 0 |
+| `clusq` | 460 | 450 | 7 | 3 |
+| `clusnq` | 460 | 452 | 7 | 1 |
+
+Miss cycles and recovery (next cycle all exact?): 72->yes, 82->yes, 116->yes
+Faults survived in valid time: restart ch1 x6, restart ch2 x8, restart flow-worker x7, stop keeper3 x7 (total 28)
+INTEGRITY: PASS: no lost or corrupted rows; every miss matched exactly at the next comparison
+safe matched waits: p50 10 s, p99 281 s, max 285 s
+soak cores busy (valid time, contention excluded): mean 76%, p90 94%
+source events insert rate: 57 rows/s average
+safe layout: 116 cycles counted, freshness misses in 2 (72, 82)

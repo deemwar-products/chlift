@@ -1,0 +1,2 @@
+2026-10-04 04:36:15	QueryStart	0	
+2026-10-04 04:36:16	ExceptionWhileProcessing	241	Code: 241. DB::Exception: (total) memory limit exceeded: would use 1.12 GiB (attempt to allocate chunk of 0.00 B), current RSS: 979.86 MiB, maximum: 1.12 GiB. OvercommitTracker decision: Query was selected to stop by OvercommitTracker: While executing AggregatingTransform. (MEMORY_LIMIT_EXCEEDED) (v
