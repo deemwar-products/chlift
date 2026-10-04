@@ -6,6 +6,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"net/http"
 	"os"
 	"time"
 
@@ -36,6 +37,24 @@ func main() {
 		{Name: "WRONG translation on purpose: toStartOfWeek starts weeks on Sunday",
 			Postgres:   `SELECT date_trunc('week', event_time) AS w, count(*) FROM user_events GROUP BY 1`,
 			ClickHouse: `SELECT toDateTime(toStartOfWeek(event_time)) AS w, count() FROM chlift.user_events FINAL WHERE _peerdb_is_deleted = 0 GROUP BY w`},
+	}
+	// CHLIFT_METRICS_ADDR set: keep shadow-reading the correct queries and serve the SDK's metrics.
+	if addr := os.Getenv("CHLIFT_METRICS_ADDR"); addr != "" {
+		http.HandleFunc("/metrics", func(w http.ResponseWriter, _ *http.Request) { c.WritePrometheus(w) })
+		go func() { must(http.ListenAndServe(addr, nil)) }()
+		go func() {
+			for m := range mismatches {
+				fmt.Printf("MISMATCH %s: %s\n", m.Query, m.Detail)
+			}
+		}()
+		for {
+			for _, q := range queries[:3] { // the three correct translations
+				if _, err := c.Read(context.Background(), q); err != nil {
+					fmt.Fprintln(os.Stderr, err)
+				}
+			}
+			time.Sleep(10 * time.Second)
+		}
 	}
 	for _, q := range queries {
 		rows, err := c.Read(context.Background(), q)
