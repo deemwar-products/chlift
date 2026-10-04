@@ -63,6 +63,11 @@ Grafana dashboard is in `deploy/grafana/`.
   the two results are normalised (time zones, number formats, row order) and compared. Mismatches and latency are
   counted, and never returned to the caller.
 - Each call site carries both SQL strings, because the dialects differ. chlift doesn't translate SQL.
+- Shadow-read **settled data**. ClickHouse is read a moment after Postgres, and CDC applies changes a few seconds
+  later. So a query that includes rows written in the last seconds (this week so far, all-time totals) can differ by a
+  few rows on a busy table, either way. That's a timing difference, not a wrong translation. End the compared window
+  before now (for example, exclude today). In our live-write test, the query on completed days matched every time;
+  the two that included current rows did not.
 - Example: on our dev data, three correct translations matched. A wrong one was caught: ClickHouse's `toStartOfWeek`
   starts weeks on Sunday, Postgres's `date_trunc('week')` on Monday. See `sdk/go/example`.
 
