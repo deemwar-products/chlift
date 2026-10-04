@@ -1,0 +1,230 @@
+{
+ "results": [
+  {
+   "query": "daily active users, last 30 days",
+   "postgres_ms": 8425.755,
+   "clickhouse_final_ms": 907,
+   "clickhouse_ms": 318,
+   "postgres_runs_ms": [
+    8871.631,
+    8500.527,
+    7647.649,
+    7494.105,
+    8425.755
+   ],
+   "clickhouse_final_runs_ms": [
+    1399,
+    907,
+    963,
+    712,
+    688
+   ],
+   "clickhouse_runs_ms": [
+    418,
+    318,
+    357,
+    284,
+    247
+   ],
+   "postgres_sql": "SELECT date_trunc('day', event_time) d, count(DISTINCT user_id) FROM user_events WHERE event_time > now() - interval '30 days' GROUP BY 1 ORDER BY 1",
+   "clickhouse_sql": "SELECT toDate(event_time) d, uniqExact(user_id) FROM %[1]s.user_events%[2]s WHERE event_time > now() - INTERVAL 30 DAY AND _peerdb_is_deleted = 0 GROUP BY d ORDER BY d",
+   "duckdb_postgres_runs_ms": [
+    7207.0,
+    6386.0,
+    6237.0,
+    6382.0,
+    6120.0
+   ],
+   "duckdb_parquet_runs_ms": [
+    500.0,
+    602.0,
+    387.0,
+    346.0,
+    407.0
+   ],
+   "result_rows": {
+    "pg": 30,
+    "duck_pg": 30,
+    "duck_pq": 30
+   }
+  },
+  {
+   "query": "events per kind per week, 6 months",
+   "postgres_ms": 20570.724,
+   "clickhouse_final_ms": 1025,
+   "clickhouse_ms": 447,
+   "postgres_runs_ms": [
+    20570.724,
+    20845.045,
+    20876.733,
+    19432.194,
+    17481.392
+   ],
+   "clickhouse_final_runs_ms": [
+    930,
+    1025,
+    1264,
+    855,
+    1046
+   ],
+   "clickhouse_runs_ms": [
+    447,
+    497,
+    428,
+    467,
+    400
+   ],
+   "postgres_sql": "SELECT date_trunc('week', event_time) w, kind, count(*) FROM user_events GROUP BY 1, 2 ORDER BY 1, 2",
+   "clickhouse_sql": "SELECT toStartOfWeek(event_time) w, kind, count() FROM %[1]s.user_events%[2]s WHERE _peerdb_is_deleted = 0 GROUP BY w, kind ORDER BY w, kind",
+   "duckdb_postgres_runs_ms": [
+    6724.0,
+    7150.0,
+    8854.0,
+    9204.0,
+    7906.0
+   ],
+   "duckdb_parquet_runs_ms": [
+    1513.0,
+    1455.0,
+    1572.0,
+    1423.0,
+    2151.0
+   ],
+   "result_rows": {
+    "pg": 165,
+    "duck_pg": 165,
+    "duck_pq": 165
+   }
+  },
+  {
+   "query": "top 10 accounts by events, last 7 days",
+   "postgres_ms": 518.497,
+   "clickhouse_final_ms": 589,
+   "clickhouse_ms": 220,
+   "postgres_runs_ms": [
+    6103.062,
+    688.298,
+    468.518,
+    476.457,
+    518.497
+   ],
+   "clickhouse_final_runs_ms": [
+    500,
+    550,
+    706,
+    769,
+    589
+   ],
+   "clickhouse_runs_ms": [
+    206,
+    220,
+    247,
+    177,
+    427
+   ],
+   "postgres_sql": "SELECT account_id, count(*) c FROM user_events WHERE event_time > now() - interval '7 days' GROUP BY 1 ORDER BY c DESC LIMIT 10",
+   "clickhouse_sql": "SELECT account_id, count() c FROM %[1]s.user_events%[2]s WHERE event_time > now() - INTERVAL 7 DAY AND _peerdb_is_deleted = 0 GROUP BY account_id ORDER BY c DESC LIMIT 10",
+   "duckdb_postgres_runs_ms": [
+    6205.0,
+    6096.0,
+    6079.0,
+    6041.0,
+    6328.0
+   ],
+   "duckdb_parquet_runs_ms": [
+    78.0,
+    53.0,
+    45.0,
+    49.0,
+    49.0
+   ],
+   "result_rows": {
+    "pg": 10,
+    "duck_pg": 10,
+    "duck_pq": 10
+   }
+  },
+  {
+   "query": "p95 latency per endpoint, last 30 days",
+   "postgres_ms": 3657.504,
+   "clickhouse_final_ms": 693,
+   "clickhouse_ms": 230,
+   "postgres_runs_ms": [
+    3648.971,
+    3336.361,
+    3992.69,
+    3744.01,
+    3657.504
+   ],
+   "clickhouse_final_runs_ms": [
+    699,
+    482,
+    693,
+    551,
+    806
+   ],
+   "clickhouse_runs_ms": [
+    179,
+    261,
+    199,
+    238,
+    230
+   ],
+   "postgres_sql": "SELECT path, percentile_cont(0.95) WITHIN GROUP (ORDER BY duration_ms) FROM request_logs WHERE created_at > now() - interval '30 days' GROUP BY 1 ORDER BY 1",
+   "clickhouse_sql": "SELECT path, quantileExact(0.95)(duration_ms) FROM %[1]s.request_logs%[2]s WHERE created_at > now() - INTERVAL 30 DAY AND _peerdb_is_deleted = 0 GROUP BY path ORDER BY path",
+   "duckdb_postgres_runs_ms": [
+    2060.0,
+    1888.0,
+    1977.0,
+    1952.0,
+    1932.0
+   ],
+   "duckdb_parquet_runs_ms": [
+    63.0,
+    33.0,
+    59.0,
+    62.0,
+    49.0
+   ],
+   "result_rows": {
+    "pg": 4,
+    "duck_pg": 4,
+    "duck_pq": 4
+   }
+  }
+ ],
+ "runs": 5,
+ "taken_utc": "2026-10-04T13:39:14Z",
+ "duckdb_version": "v1.5.6 (Variegata) 069cc9f9b5",
+ "duckdb_threads_cpus": 4,
+ "duckdb_memory_limit": "2GB (agent user memory is capped on this shared box)",
+ "parquet_copy_seconds": 22.8,
+ "parquet_bytes": 541448822,
+ "load": {
+  "start": {
+   "utc": "2026-10-04T13:35:59Z",
+   "loadavg": "14.50 15.13 13.52",
+   "cpu_pressure_some_avg60": 37.8
+  },
+  "after_pg_clickhouse": {
+   "utc": "2026-10-04T13:39:14Z",
+   "loadavg": "8.01 12.18 12.72",
+   "cpu_pressure_some_avg60": 32.91
+  },
+  "after_duckdb_postgres": {
+   "utc": "2026-10-04T13:41:29Z",
+   "loadavg": "21.26 15.70 13.93",
+   "cpu_pressure_some_avg60": 58.35
+  },
+  "after_copy": {
+   "utc": "2026-10-04T13:41:52Z",
+   "loadavg": "23.41 16.63 14.29",
+   "cpu_pressure_some_avg60": 67.03
+  },
+  "after_duckdb_parquet": {
+   "utc": "2026-10-04T13:42:06Z",
+   "loadavg": "21.79 16.59 14.31",
+   "cpu_pressure_some_avg60": 68.99
+  }
+ }
+}

@@ -43,6 +43,27 @@ for label, xs in (("FINAL", fin), ("after cutover", plain)):
     if rng not in doc:
         fail.append(f"speed-up range for {label} should read {rng}")
 
+# The 2026-10-04 rerun with DuckDB (bench4-raw.json): every table row and range recomputed the same way.
+b4 = json.load(open(os.path.join(here, "bench4-raw.json")))
+b4cols = ("postgres_runs_ms", "clickhouse_final_runs_ms", "clickhouse_runs_ms", "duckdb_postgres_runs_ms", "duckdb_parquet_runs_ms")
+b4x = {k: [] for k in b4cols[1:]}
+for r in b4["results"]:
+    m = [statistics.median(r[k]) for k in b4cols]
+    cells = " | ".join(f"{x:,.0f}" for x in m) + " |"
+    names = (r["query"], r["query"][0].upper() + r["query"][1:])
+    row = next((f"| {n} | {cells}" for n in names if f"| {n} | {cells}" in doc), f"| {names[1]} | {cells}")
+    if row not in doc:
+        fail.append(f"bench4 row missing or different in numbers.md: {row}")
+    covered |= nums(row)
+    if len(set(r["result_rows"].values())) != 1:
+        fail.append(f"bench4: engines returned different row counts for {r['query']}: {r['result_rows']}")
+    for k in b4cols[1:]:
+        b4x[k].append(m[0] / statistics.median(r[k]))
+for k, xs in b4x.items():
+    rng = f"{min(xs):.1f}× to {max(xs):.1f}×"
+    if rng not in doc:
+        fail.append(f"bench4 range for {k} should read {rng}")
+
 ignore = {"2026", "4746"}  # a year, a PeerDB issue number
 for n in sorted(nums(re.sub(r"\d{4}-\d{2}-\d{2}", "", doc)) - covered - ignore):
     fail.append(f"figure {n} in numbers.md is not backed by claims.tsv or bench-raw.json")
