@@ -22,5 +22,12 @@ jobs:
         env: { GH_TOKEN: "${{ github.token }}" }
         run: |
           pre=""; case "$GITHUB_REF_NAME" in *-*) pre="--prerelease";; esac
-          gh release create "$GITHUB_REF_NAME" dist/* $pre --title "chlift $GITHUB_REF_NAME" \
-            --notes "Preview release. Read docs/evidence/ for what was measured and its caveats. Verify downloads with SHA256SUMS."
+          notes="docs/releases/$GITHUB_REF_NAME.md"
+          if [ -f "$notes" ]; then
+            set -- --notes-file "$notes"
+          elif [ -z "$pre" ]; then
+            echo "a full release needs $notes (release notes); refusing to publish preview wording" >&2; exit 1
+          else
+            set -- --notes "Preview release. Read docs/evidence/ for what was measured and its caveats. Verify downloads with SHA256SUMS."
+          fi
+          gh release create "$GITHUB_REF_NAME" dist/* $pre --title "chlift $GITHUB_REF_NAME" "$@"
