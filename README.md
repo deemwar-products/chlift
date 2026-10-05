@@ -80,11 +80,12 @@ Grafana dashboard is in `deploy/grafana/`.
 - **Memory per ClickHouse replica: 16 GB minimum, 32 GB+ for production** (ClickHouse's own guidance). The soak ran at
   1.5 GB per replica and hit ClickHouse memory-limit errors (Code 241) on its verification queries once the tables held
   a few million rows. Sizes between 1.5 GB and 16 GB were not tested.
-- **CPU: 2 dedicated cores per mirror** (PeerDB plus the replicas it writes into) at up to about 60 inserted rows/s
-  with steady updates and deletes. Add cores in proportion to your write rate. The soak ran 3 mirrors on 2 cores in
-  total. It never lost a row, but chlift's layout fell behind the 5-minute freshness window in 2 of 116 cycles, and once
-  needed 285 of the 300 seconds. The 2-cores-per-mirror figure is about 3× the soak's measured peak demand. It is
-  derived from the soak, not yet soak-tested at that size.
+- **CPU: plan for more than 2 cores per mirror.** Measured: one mirror (PeerDB plus the two replicas it writes into),
+  limited to 2 cores' worth of CPU by a quota on shared cores, kept every row for 6 hours under injected faults. But in
+  1 of 36 cycles, it fell behind the 5-minute freshness window while running at that CPU cap, and caught up exactly
+  by the next check. That was at about 61 inserted rows/s, with steady updates and deletes. **3 cores per mirror is
+  our derived estimate, not yet confirmed.** Add cores in proportion to your write rate. Details:
+  [confirm run](docs/evidence/numbers.md#confirm-run-2026-10-04-to-05).
 
 ## Amazon RDS / Aurora PostgreSQL
 

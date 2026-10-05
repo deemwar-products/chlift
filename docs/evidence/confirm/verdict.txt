@@ -1,0 +1,9 @@
+chlift confirm run: layouts ['safe'], 36 cycles, 144 checks, 18:26Z to 00:27Z (6.0 h)
+CPU: quota-based: CPUQuota=200%, CPUWeight=1000, shared physical cores 4-7 (not pinned cores)
+exact 140/144, lag misses 4, query errors 0
+matched waits: p50 5 s, p99 82 s, max 82 s
+miss cycles and recovery: 32->yes
+source events insert rate: 61 rows/s average
+faults: restart ch1 x2, restart ch2 x2, restart flow-worker x2, stop keeper3 x2 (total 8)
+INTEGRITY: PASS: no lost or corrupted rows; every miss matched exactly at the next comparison
+host (376 measure.log ticks): load1 p50 3.3, max 14.8; agent CPU pressure avg10 p50 14%, max 72%; measure.slice throttled 1078 s over 6.2 h (4.8% of wall time)

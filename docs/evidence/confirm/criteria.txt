@@ -1,0 +1,6 @@
+PASS integrity: every miss followed by an exact cycle
+PASS duration >= 5.5 h (got 6.0 h)
+FAIL 0 freshness misses (got 4)
+PASS p99 catch-up wait <= 150 s (got 82 s)
+PASS 0 query errors / Code 241 (got 0)
+CALL: NOT confirmed; raise the README CPU figure and report the misses with their host conditions

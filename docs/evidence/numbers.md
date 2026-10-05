@@ -119,3 +119,23 @@ Against Postgres:
   2-replica cluster kept current by CDC.
 - The 7-day query reads a short window of this data, so Postgres is fast on it and ClickHouse `FINAL` is slower
   (0.9×).
+
+## Confirm run (2026-10-04 to 05)
+
+**Question:** is 2 cores' worth of CPU per mirror enough for chlift's layout? The README had published that figure as
+derived from the soak, not tested. Raw data, the scripts, and herdrmove's per-minute host log are in [`confirm/`](confirm/):
+- `python3 confirm/confirm_tally.py confirm` prints `confirm/verdict.txt`;
+- `python3 confirm/finalize.py confirm` applies the criteria, which were fixed before the result: `confirm/criteria.txt`.
+
+**Setup:** one layout (`safe`, what `chlift migrate start` creates), one mirror, 2 ClickHouse replicas (2.5 GB each)
+plus a 3-member Keeper. The workload and faults are the same as in the soak above.
+
+**CPU:** quota-based: CPUQuota=200%, CPUWeight=1000, on shared physical cores 4-7 of the same 8-core server. These are
+not pinned cores. Other jobs ran at a lower weight.
+
+| # | Figure | Source | Caveat |
+|---|---|---|---|
+| 18 | **Integrity: no lost or corrupted rows** in **6.0 h** (36 cycles), across **8 faults** (each replica restarted twice, PeerDB's flow worker restarted twice, a Keeper member stopped for 10 minutes twice) | `confirm/verdict.txt` | |
+| 19 | **Freshness: 1 cycle of 36 missed the 5-minute window** (cycle 32), then matched exactly at the next check. Catch-up time when matched: **p50 5 s, p99 82 s** | `confirm/verdict.txt` | No fault was active in that cycle. |
+| 20 | During that catch-up, the run was **throttled 103.5 s in 8 minutes** at its CPU quota, against **4.8%** of the time over the whole run | `confirm/measure.log` (ticks 01:38:04 and 01:46:00 CEST) | This is why the README says to plan for more than 2 cores per mirror. 3 is a derived estimate, not yet confirmed. |
+| 21 | Source write rate: **61 rows/s** of inserts on average, plus steady updates and deletes | `confirm/verdict.txt` | |
