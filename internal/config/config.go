@@ -12,11 +12,15 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"regexp"
 	"slices"
 	"strings"
 
 	"gopkg.in/yaml.v3"
 )
+
+// chVersionRe accepts an LTS line (26.3: the newest build of that line at install) or an exact build (26.3.41.4).
+var chVersionRe = regexp.MustCompile(`^\d+\.\d+(\.\d+\.\d+)?$`)
 
 const (
 	RoleClickHouse = "clickhouse"
@@ -126,6 +130,8 @@ func (c *Config) Validate() (errs, warns []string) {
 	}
 	if c.ClickHouseVersion == "" {
 		errs = append(errs, "clickhouse_version is empty (use an LTS line such as 26.3)")
+	} else if !chVersionRe.MatchString(c.ClickHouseVersion) {
+		errs = append(errs, fmt.Sprintf("clickhouse_version %q: use an LTS line such as 26.3, or an exact build such as 26.3.41.4 to pin it", c.ClickHouseVersion))
 	}
 	names := map[string]bool{}
 	for _, h := range c.Hosts {

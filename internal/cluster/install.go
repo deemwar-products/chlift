@@ -160,6 +160,13 @@ func pickBuild(ctx context.Context, c *config.Config, nodes []*Node) (string, er
 	return resolveBuild(ctx, first, c.ClickHouseVersion)
 }
 
+// versionPattern matches the package versions of a ClickHouse line (26.3 -> every 26.3.x build, not 26.30) or of one
+// exact build (26.3.41.4 -> "26.3.41.4" on deb and "26.3.41.4-1" on rpm, not 26.3.41.40). The config validates the
+// format, so only digits and dots reach the shell.
+func versionPattern(line string) string {
+	return "^" + strings.ReplaceAll(line, ".", `\.`) + `(\.|-|$)`
+}
+
 func resolveBuild(ctx context.Context, n *Node, line string) (string, error) {
 	var script string
 	switch n.Facts.Family() {
@@ -172,7 +179,7 @@ if [ ! -f /usr/share/keyrings/clickhouse-keyring.gpg ]; then
   echo "deb [signed-by=/usr/share/keyrings/clickhouse-keyring.gpg arch=$(dpkg --print-architecture)] https://packages.clickhouse.com/deb lts main" > /etc/apt/sources.list.d/clickhouse.list
 fi
 apt-get update -qq
-apt-cache madison clickhouse-common-static | awk '{print $3}' | grep '^%[1]s\.' | sort -V | tail -1`, line)
+apt-cache madison clickhouse-common-static | awk '{print $3}' | grep -E '%[1]s' | sort -V | tail -1`, versionPattern(line))
 	case "rpm":
 		script = fmt.Sprintf(`
 if [ ! -f /etc/yum.repos.d/clickhouse.repo ]; then
@@ -181,7 +188,7 @@ if [ ! -f /etc/yum.repos.d/clickhouse.repo ]; then
 fi
 # Import the repo key up front: without it the first yum call asks to import it, gets no answer, and fails.
 rpm -q gpg-pubkey --qf '%%{SUMMARY}\n' | grep -qi clickhouse || rpm --import https://packages.clickhouse.com/rpm/stable/repodata/repomd.xml.key
-yum -y --showduplicates list clickhouse-common-static 2>/dev/null | awk '{print $2}' | grep '^%[1]s\.' | sort -V | tail -1`, line)
+yum -y --showduplicates list clickhouse-common-static 2>/dev/null | awk '{print $2}' | grep -E '%[1]s' | sort -V | tail -1`, versionPattern(line))
 	}
 	v, err := n.SSH.Run(ctx, script)
 	if err == nil && v == "" {

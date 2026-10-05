@@ -77,6 +77,8 @@ Grafana dashboard is in `deploy/grafana/`.
   tested), SSH key access, and Docker with compose v2 on the PeerDB host.
 - Postgres 12+ with `wal_level=logical`. Set `max_slot_wal_keep_size`, so a stalled mirror can't fill the disk.
 - ClickHouse from the official LTS packages, the same pinned build on every host.
+  `clickhouse_version` takes an LTS line (`26.3`: the newest build of that line at install time) or an exact build
+  (`26.3.41.4`), which pins every host to that build for repeatable installs.
 - **Memory per ClickHouse replica: 16 GB minimum, 32 GB+ for production** (ClickHouse's own guidance). The soak ran at
   1.5 GB per replica and hit ClickHouse memory-limit errors (Code 241) on its verification queries once the tables held
   a few million rows. Sizes between 1.5 GB and 16 GB were not tested.
