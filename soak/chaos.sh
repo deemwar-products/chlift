@@ -33,6 +33,10 @@ n=${SOAK_CHAOS_START:-0}
 log "chaos start, until epoch $end"
 while [ "$(date +%s)" -lt "$end" ]; do
   sleep "${SOAK_FAULT_EVERY:-2400}"; n=$((n+1))
+  # The soak is over once its runner is gone or stopped: never act after that. On 2026-10-04 a post-run 'restart
+  # flow-worker' started one container of a stopped stack, which then crash-looped for ~22 h on shared cores.
+  rid=$(docker ps -q --filter "label=com.docker.compose.project=$PROJECT" --filter "label=com.docker.compose.service=runner" --filter status=running)
+  [ -n "$rid" ] || { log "runner not running: soak over, no more faults"; break; }
   if [ -f "$(dirname "$LOG")/PAUSED" ]; then
     [ "${SOAK_SKIP_FATAL:-0}" = 1 ] && fatal "fault $n skipped: soak paused by guard"
     log "skip fault $n: soak paused by guard"; continue
