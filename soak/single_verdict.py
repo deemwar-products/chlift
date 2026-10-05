@@ -42,6 +42,9 @@ first, last = pt(rows[0]["ts"]), pt(rows[-1]["ts"])
 hours = (last - first).total_seconds() / 3600
 lag = [r for r in rows if not r["match"] and r["ch"]]
 qerr = [r for r in rows if not r["match"] and not r["ch"]]
+# Criterion 6 is about MEMORY (Code 241). Other query errors (e.g. ClickHouse unreachable during an outage) are graded
+# like misses under criterion 5: allowed in fault-affected cycles if the next cycle is exact, failing in clean cycles.
+mem = [r for r in qerr if re.search(r"241|MEMORY_LIMIT", r.get("err", ""))]
 cyc = list(by)
 miss_cycles = sorted({r["cycle"] for r in rows if not r["match"]})
 recover = {c: (all(x["match"] for x in by[c + 1]) if c + 1 in by else None) for c in miss_cycles}
@@ -55,7 +58,9 @@ audit = subprocess.run([sys.executable, os.path.join(here, "fault_audit.py"), re
 
 print(f"chlift single-server fault soak: {len(by)} cycles, {len(rows)} checks, {first:%H:%M}Z to {last:%H:%M}Z ({hours:.1f} h)")
 print("CPU: 3-CPU quota on shared cores (CPUQuota=300%, CPUWeight=1000, shared physical cores 4-7; not dedicated cores)")
-print(f"exact {len(rows) - len(lag) - len(qerr)}/{len(rows)}, lag misses {len(lag)}, query errors {len(qerr)}")
+print(f"exact {len(rows) - len(lag) - len(qerr)}/{len(rows)}, lag misses {len(lag)}, query errors {len(qerr)} (Code 241: {len(mem)})")
+for r in qerr:
+    print(f"  query error cycle {r['cycle']} {r['ts']} {r['table']}: {r.get('err', '')[:120]}")
 print(f"cycles: {len(clean)} clean, {len(affected)} fault-affected")
 print(f"clean-cycle catch-up waits: p50 {w_clean[len(w_clean) // 2] if w_clean else '-'} s, p99 {p99} s, max {w_clean[-1] if w_clean else '-'} s")
 print("misses in fault-affected cycles: " + (", ".join(f"{c} ({'; '.join(h)}) -> next exact: {recover.get(c)}" for c, h in aff_miss) or "none"))
@@ -87,7 +92,7 @@ crit = [
     ("integrity: the final cycle is exact", final_exact),
     (f"freshness: 0 misses in clean cycles (got {len(clean_miss)})", not clean_miss),
     (f"freshness: clean-cycle p99 catch-up <= 150 s (got {p99} s)", p99 is not None and p99 <= 150),
-    (f"0 query errors / Code 241 (got {len(qerr)})", not qerr),
+    (f"memory: 0 Code 241 errors (got {len(mem)}; {len(qerr) - len(mem)} other query errors graded as misses under 5)", not mem),
 ]
 for name, ok in crit:
     print(("PASS " if ok else "FAIL ") + name)
