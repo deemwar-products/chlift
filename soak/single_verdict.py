@@ -61,6 +61,23 @@ print(f"clean-cycle catch-up waits: p50 {w_clean[len(w_clean) // 2] if w_clean e
 print("misses in fault-affected cycles: " + (", ".join(f"{c} ({'; '.join(h)}) -> next exact: {recover.get(c)}" for c, h in aff_miss) or "none"))
 print("misses in clean cycles: " + (", ".join(map(str, clean_miss)) or "none"))
 print(audit.stdout.strip())
+# Host conditions beside the result (criteria: from measure.log, deltas from the start tick). measure.log is CEST (UTC+2).
+ticks = []
+if os.path.exists(mlog):
+    for l in open(mlog):
+        m = re.match(r"(\S+ \S+) CEST tick load=([\d.]+) .*?agent_cpu_psi_avg10=([\d.]+) nr_throttled=(\d+) throttled_usec=(\d+)", l)
+        if m:
+            ts = datetime.strptime(m[1], "%Y-%m-%d %H:%M:%S").replace(tzinfo=UTC) - timedelta(hours=2)
+            if first - timedelta(minutes=15) <= ts <= last:
+                ticks.append((ts, float(m[2]), float(m[3]), int(m[5])))
+if ticks:
+    ld = sorted(t[1] for t in ticks); ps = sorted(t[2] for t in ticks)
+    thr = (ticks[-1][3] - ticks[0][3]) / 1e6; span = (ticks[-1][0] - ticks[0][0]).total_seconds()
+    print(f"host ({len(ticks)} measure.log ticks, deltas from {ticks[0][0]:%H:%M}Z): load1 p50 {ld[len(ld) // 2]:.1f}, max {ld[-1]:.1f}; "
+          f"agent CPU pressure avg10 p50 {ps[len(ps) // 2]:.0f}%, max {ps[-1]:.0f}%; measure.slice throttled {thr:.0f} s over "
+          f"{span / 3600:.1f} h ({100 * thr / span if span else 0:.1f}% of wall time)")
+else:
+    print(f"host: NO measure.log ticks in the run window ({mlog})")
 
 crit = [
     ("run valid: no INVALID marker (no fatal skip)", not invalid),
