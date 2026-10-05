@@ -1,0 +1,5 @@
+peerdb: mirror chlift_up dropped
+peerdb: peer chlift_up_src dropped
+peerdb: peer chlift_up_ch dropped
+clickhouse: database chlift_up dropped on 2 replica(s)
+postgres: publication chlift_up_pub dropped; mirror slots left: 0

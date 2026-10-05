@@ -1,0 +1,17 @@
+ClickHouse build for every host: 26.3.40.16
+node-c: clickhouse-keeper running
+node-a: clickhouse-server running
+node-b: clickhouse-server running
+peer: peerdb stable-v0.37.10 running (api on a localhost port of compose project chlift-peerdb), staging http://chlift-s3:8333/peerdb
+ok   node-a: keeper answers: state follower
+ok   node-b: keeper answers: state follower
+ok   node-c: keeper answers: state leader
+ok   keeper quorum: 3 member(s), 1 leader(s), 2/2 followers synced
+ok   node-a: clickhouse answers: 26.3.40.16
+ok   node-a: no read-only replicas: read-only replicas: 0
+ok   node-b: clickhouse answers: 26.3.40.16
+ok   node-b: no read-only replicas: read-only replicas: 0
+ok   replication: insert on node-a, read on every replica: row seen on node-a, node-b
+ok   peer: peerdb api answers: 
+ok   node-a: clickhouse reads/writes the peerdb staging bucket: http://chlift-s3:8333 
+ok   node-b: clickhouse reads/writes the peerdb staging bucket: http://chlift-s3:8333 

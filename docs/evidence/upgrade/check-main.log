@@ -1,0 +1,2 @@
+ok   public.notes_demo: postgres 18804 rows; replicas map[node-a:18804 node-b:18804] 
+checksum public.notes_demo: 64 buckets x 5 columns (count, id, created_at, touched, body), 0 differ

@@ -1,0 +1,4 @@
+$ sha256sum -c (chlift-linux-amd64 line of v0.1.0-preview SHA256SUMS)
+chlift-linux-amd64: OK
+$ ./chlift-linux-amd64 version
+chlift v0.1.0-preview

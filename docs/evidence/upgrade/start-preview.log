@@ -1,0 +1,3 @@
+postgres: CREATE PUBLICATION chlift_up_pub FOR TABLE "public"."notes_demo"
+clickhouse: database chlift_up (Replicated) on 2 replica(s)
+peerdb: mirror chlift_up created ({"workflowId":"chlift_up-peerflow"}); snapshot then CDC. Follow with `chlift migrate status`
