@@ -43,6 +43,9 @@ var variants = []variant{
 		Replicas: []string{"ch1:9000", "ch2:9000"}, LocalSfx: "_shard"},
 	// C: cluster mode, PeerDB defaults (no quorum).
 	{Name: "clusnq", Cluster: "chlift", Replicas: []string{"ch1:9000", "ch2:9000"}, LocalSfx: "_shard"},
+	// D: single server (one ClickHouse with embedded Keeper): the same Replicated database with one replica, as
+	// 'chlift migrate start' creates on one host. Run alone, with soak/single.override.yml (SOAK_VARIANTS=single).
+	{Name: "single", Replicas: []string{"ch1:9000"}},
 }
 
 var (

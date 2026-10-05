@@ -61,3 +61,10 @@ func TestSelectVariants(t *testing.T) {
 		t.Fatalf("want [clusnq safe], got %v", variantNames(got))
 	}
 }
+
+func TestSelectSingle(t *testing.T) {
+	got := selectVariants(variants, "single")
+	if len(got) != 1 || got[0].Name != "single" || len(got[0].Replicas) != 1 || got[0].Replicas[0] != "ch1:9000" {
+		t.Fatalf("want the single-server layout on ch1 only, got %+v", got)
+	}
+}

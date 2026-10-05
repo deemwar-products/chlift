@@ -1,0 +1,16 @@
+# Single-server soak: Postgres -> ONE ClickHouse (embedded Keeper) -> PeerDB.
+# Use: docker compose -p chlift-single --profile run -f compose.yml -f single.override.yml up -d
+# with SOAK_VARIANTS=single; chaos.sh with SOAK_FAULTS (see chaos.sh) and SOAK_SKIP_FATAL=1.
+services:
+  ch1:
+    mem_limit: 3g
+    volumes:
+      - ./ch/single.xml:/etc/clickhouse-server/config.d/chlift.xml:ro
+  ch2:
+    profiles: [replicated]
+  keeper3:
+    profiles: [replicated]
+  runner:
+    environment:
+      SOAK_VARIANTS: single
+      SOAK_CH: ch1:9000
