@@ -1,0 +1,30 @@
+ch1 | 2026.10.05 17:30:43.912983 [ 7 ] {} <Information> Application: Starting ClickHouse 26.3.39.7 (revision: 54546, git hash: 4277fab4705d62bdd5452b9a284dff140ef47e39, build id: 41E9C5814BCA0A2CB048FAAB1F0A5314DE03C370), PID 7
+ch1 | 2026.10.05 18:12:09.812859 [ 77 ] {} <Information> Application: Received termination signal (Terminated)
+ch1 | 2026.10.05 18:12:09.814704 [ 7 ] {} <Debug> Application: Received termination signal.
+ch1 | 2026.10.05 18:12:17.781068 [ 7 ] {} <Information> Application: Starting ClickHouse 26.3.39.7 (revision: 54546, git hash: 4277fab4705d62bdd5452b9a284dff140ef47e39, build id: 41E9C5814BCA0A2CB048FAAB1F0A5314DE03C370), PID 7
+ch1 | 2026.10.05 19:32:27.864703 [ 76 ] {} <Information> Application: Received termination signal (Terminated)
+ch1 | 2026.10.05 19:32:27.869866 [ 7 ] {} <Debug> Application: Received termination signal.
+ch1 | 2026.10.05 19:42:37.968931 [ 7 ] {} <Information> Application: Starting ClickHouse 26.3.39.7 (revision: 54546, git hash: 4277fab4705d62bdd5452b9a284dff140ef47e39, build id: 41E9C5814BCA0A2CB048FAAB1F0A5314DE03C370), PID 7
+ch1 | 2026.10.05 21:02:45.991793 [ 76 ] {} <Information> Application: Received termination signal (Terminated)
+ch1 | 2026.10.05 21:02:45.991959 [ 7 ] {} <Debug> Application: Received termination signal.
+ch1 | 2026.10.05 21:02:52.920303 [ 6 ] {} <Information> Application: Starting ClickHouse 26.3.39.7 (revision: 54546, git hash: 4277fab4705d62bdd5452b9a284dff140ef47e39, build id: 41E9C5814BCA0A2CB048FAAB1F0A5314DE03C370), PID 6
+ch1 | 2026.10.05 22:23:03.233571 [ 75 ] {} <Information> Application: Received termination signal (Terminated)
+ch1 | 2026.10.05 22:23:03.233772 [ 6 ] {} <Debug> Application: Received termination signal.
+ch1 | 2026.10.05 22:33:13.321878 [ 7 ] {} <Information> Application: Starting ClickHouse 26.3.39.7 (revision: 54546, git hash: 4277fab4705d62bdd5452b9a284dff140ef47e39, build id: 41E9C5814BCA0A2CB048FAAB1F0A5314DE03C370), PID 7
+ch1 | 2026.10.05 23:45:13.605103 [ 76 ] {} <Information> Application: Received termination signal (Terminated)
+ch1 | 2026.10.05 23:45:13.611865 [ 7 ] {} <Debug> Application: Received termination signal.
+flow-worker | 2026-10-05T17:31:03.028764239Z {"time":"2026-10-05T17:31:03.020678375Z","level":"INFO","msg":"Started Worker","Namespace":"default","TaskQueue":"peer-flow-task-queue","WorkerID":"1@769d969c7403@","deploymentUid":""}
+flow-worker | 2026-10-05T18:52:30.500119084Z {"time":"2026-10-05T18:52:30.49623354Z","level":"INFO","msg":"Started Worker","Namespace":"default","TaskQueue":"peer-flow-task-queue","WorkerID":"1@769d969c7403@","deploymentUid":""}
+flow-worker | 2026-10-05T21:43:05.657220630Z {"time":"2026-10-05T21:43:05.656843582Z","level":"INFO","msg":"Started Worker","Namespace":"default","TaskQueue":"peer-flow-task-queue","WorkerID":"1@769d969c7403@","deploymentUid":""}
+source | 2026-10-05T17:30:42.963040031Z 2026-10-05 17:30:42.962 UTC [50] LOG:  database system is ready to accept connections
+source | 2026-10-05T17:30:43.558385864Z 2026-10-05 17:30:43.558 UTC [50] LOG:  received fast shutdown request
+source | 2026-10-05T17:30:44.166278021Z 2026-10-05 17:30:44.165 UTC [50] LOG:  database system is shut down
+source | 2026-10-05T17:30:44.353161393Z 2026-10-05 17:30:44.350 UTC [1] LOG:  database system is ready to accept connections
+source | 2026-10-05T20:22:35.964136284Z 2026-10-05 20:22:35.963 UTC [1] LOG:  received fast shutdown request
+source | 2026-10-05T20:22:45.125736520Z 2026-10-05 20:22:45.125 UTC [1] LOG:  database system is shut down
+source | 2026-10-05T20:22:45.992935523Z 2026-10-05 20:22:45.992 UTC [1] LOG:  database system is ready to accept connections
+source | 2026-10-05T23:13:11.840699959Z 2026-10-05 23:13:11.840 UTC [1] LOG:  received fast shutdown request
+source | 2026-10-05T23:13:12.089949792Z 2026-10-05 23:13:12.089 UTC [1] LOG:  database system is shut down
+source | 2026-10-05T23:13:13.933123731Z 2026-10-05 23:13:13.929 UTC [1] LOG:  database system is ready to accept connections
+source | 2026-10-05T23:45:13.624875793Z 2026-10-05 23:45:13.588 UTC [1] LOG:  received fast shutdown request
+source | 2026-10-05T23:45:13.804316920Z 2026-10-05 23:45:13.799 UTC [1] LOG:  database system is shut down

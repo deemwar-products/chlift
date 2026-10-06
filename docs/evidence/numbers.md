@@ -77,6 +77,8 @@ minutes, or restart PeerDB's pinned host.
 | 16 | **4 query errors, all ClickHouse Code 241 (memory limit)** at **1.12 GiB** (0.75 × the 1.5 GB cap): `clusq` in cycles 72 (both replicas) and 82, `clusnq` in cycle 116. `safe` had none | `soak/querylog-*.tsv` (ClickHouse `system.query_log`) | The 3 layouts share the same 2 servers, so this is a server memory limit, not a layout property. Below ClickHouse's 16 GB guidance. |
 | 17 | Load: the soak's 2 cores were **76%** busy on average, **94%** at p90, with the source taking **57 rows/s** of inserts on average | `soak/verdict.txt`, `soak/contention.log` | Three mirrors read the same source, so the CDC work was 3× one mirror's. |
 
+Faults in the 20.4 h soak: 29 scheduled, 28 applied, 1 skipped (a guard pause, in the excluded window). The containers' own logs confirm 24 of the 28; the first 4 ch1 restarts predate the retained ClickHouse log. Audit: `soak/fault-audit-20h.txt`.
+
 ## Postgres vs ClickHouse vs DuckDB (rerun 2026-10-04)
 
 A fresh run of the same 4 queries as rows 9 and 11, with DuckDB added two ways. All five columns come from **one
@@ -139,3 +141,23 @@ not pinned cores. Other jobs ran at a lower weight.
 | 19 | **Freshness: 1 cycle of 36 missed the 5-minute window** (cycle 32), then matched exactly at the next check. Catch-up time when matched: **p50 5 s, p99 82 s** | `confirm/verdict.txt` | No fault was active in that cycle. |
 | 20 | During that catch-up, the run was **throttled 103.5 s in 8 minutes** at its CPU quota, against **4.8%** of the time over the whole run | `confirm/measure.log` (ticks 01:38:04 and 01:46:00 CEST) | This is why the README says to plan for more than 2 cores per mirror. 3 is a derived estimate, not yet confirmed. |
 | 21 | Source write rate: **61 rows/s** of inserts on average, plus steady updates and deletes | `confirm/verdict.txt` | |
+
+## Single-server fault soak
+
+**Question:** on ONE server (Postgres → one ClickHouse with an embedded Keeper → PeerDB), does chlift keep every row
+and stay fresh under injected faults? This is the v1.0.0 gate. The criteria, written and committed before the run,
+are in `single-soak/criteria.md` (a published copy with internal names replaced).
+- **Faults, every 40 minutes:** ClickHouse restart, PeerDB worker restart, ClickHouse+Keeper down for 10 minutes,
+  Postgres restart. A fault that couldn't be applied would have invalidated the run.
+- **Recompute:** `python3 single-soak/single_verdict.py <results> chlift-single single-soak/measure.log` (output:
+  `single-soak/verdict.txt`).
+- **Setup:** containers from the soak harness (`soak/single.override.yml`) with a 3-CPU quota on shared cores, and
+  3 GB for ClickHouse.
+
+| # | Figure | Source | Caveat |
+|---|---|---|---|
+| 22 | **PASS: the single-server v1.0.0 gate is met** | `single-soak/verdict.txt` | Criteria fixed before the run: `single-soak/criteria.md`. |
+| 23 | **6.0 h**, **35 cycles**, **70 checks**: **66** exact, **2** late, **2** query errors (**0** Code 241) | `single-soak/verdict.txt` | Late = ClickHouse not caught up within the 5-minute window. The query errors are listed in verdict.txt with their text; all fell in fault-affected cycles. |
+| 24 | Faults: **8 scheduled, 8 applied**, 10 of 10 actions verified in the containers' own logs, **0 skipped** | `single-soak/fault-audit.txt`, `single-soak/container-events.txt` | A skip would have ended the run as INVALID. |
+| 25 | 26 clean / 9 fault-affected cycles; clean-cycle catch-up **p50 5 s, p99 67 s** | `single-soak/verdict.txt` | Fault windows are defined in the criteria. |
+| 26 | Host: measure.slice throttled **24 s over 6.2 h** (0.1%), from 370 per-minute ticks | `single-soak/measure.log` | 3-CPU quota on shared cores, not dedicated cores. |

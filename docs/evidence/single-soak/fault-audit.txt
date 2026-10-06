@@ -1,0 +1,12 @@
+VERIFIED   18:12:09Z restart ch1
+VERIFIED   18:52:16Z restart flow-worker
+VERIFIED   19:32:27Z stop ch1
+VERIFIED   19:42:35Z start ch1
+VERIFIED   20:22:35Z restart source
+VERIFIED   21:02:45Z restart ch1
+VERIFIED   21:42:51Z restart flow-worker
+VERIFIED   22:23:03Z stop ch1
+VERIFIED   22:33:10Z start ch1
+VERIFIED   23:13:11Z restart source
+scheduled 8 (due before the last check 23:40:31Z), applied 8 (actions logged 10, verified 10), skipped 0
+FAULT AUDIT: PASS

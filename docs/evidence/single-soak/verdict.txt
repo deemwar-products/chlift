@@ -1,0 +1,31 @@
+chlift single-server fault soak: 35 cycles, 70 checks, 17:41Z to 23:40Z (6.0 h)
+CPU: 3-CPU quota on shared cores (CPUQuota=300%, CPUWeight=1000, shared physical cores 4-7; not dedicated cores)
+exact 66/70, lag misses 2, query errors 2 (Code 241: 0)
+  query error cycle 12 2026-10-05T19:37:19Z sessions: dial tcp: lookup ch1 on 127.0.0.11:53: no such host
+  query error cycle 12 2026-10-05T19:37:19Z events: dial tcp: lookup ch1 on 127.0.0.11:53: no such host
+cycles: 26 clean, 9 fault-affected
+clean-cycle catch-up waits: p50 5 s, p99 67 s, max 67 s
+misses in fault-affected cycles: 12 (outage ch1) -> next exact: True, 29 (outage ch1) -> next exact: True
+misses in clean cycles: none
+VERIFIED   18:12:09Z restart ch1
+VERIFIED   18:52:16Z restart flow-worker
+VERIFIED   19:32:27Z stop ch1
+VERIFIED   19:42:35Z start ch1
+VERIFIED   20:22:35Z restart source
+VERIFIED   21:02:45Z restart ch1
+VERIFIED   21:42:51Z restart flow-worker
+VERIFIED   22:23:03Z stop ch1
+VERIFIED   22:33:10Z start ch1
+VERIFIED   23:13:11Z restart source
+scheduled 8 (due before the last check 23:40:31Z), applied 8 (actions logged 10, verified 10), skipped 0
+FAULT AUDIT: PASS
+host (370 measure.log ticks, deltas from 17:31Z): load1 p50 2.2, max 15.5; agent CPU pressure avg10 p50 8%, max 71%; measure.slice throttled 24 s over 6.2 h (0.1% of wall time)
+PASS run valid: no INVALID marker (no fatal skip)
+PASS fault audit: every scheduled fault applied and verified in container logs, 0 skipped
+PASS duration >= 5.5 h (got 6.0 h)
+PASS integrity: every cycle with a mismatch is followed by an exact cycle
+PASS integrity: the final cycle is exact
+PASS freshness: 0 misses in clean cycles (got 0)
+PASS freshness: clean-cycle p99 catch-up <= 150 s (got 67 s)
+PASS memory: 0 Code 241 errors (got 0; 2 other query errors graded as misses under 5)
+CALL: PASS: the single-server v1.0.0 gate is met

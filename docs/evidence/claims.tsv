@@ -38,3 +38,10 @@ Every cycle with a mismatch was followed by a cycle in which every check matched
 **throttled 103.5 s in 8 minutes**	confirm/measure.log	^2026-10-05 01:38:04 CEST tick .*throttled_usec=870157038 && ^2026-10-05 01:46:00 CEST tick .*throttled_usec=973680202
 **4.8%**	confirm/verdict.txt	measure\.slice throttled 1078 s over 6\.2 h \(4\.8% of wall time\)$
 **61 rows/s**	confirm/verdict.txt	^source events insert rate: 61 rows/s average$
+**PASS: the single-server v1.0.0 gate is met**	single-soak/verdict.txt	^CALL: PASS:\ the\ single\-server\ v1\.0\.0\ gate\ is\ met$
+**6.0 h**, **35 cycles**, **70 checks**	single-soak/verdict.txt	^chlift single-server fault soak: 35 cycles, 70 checks, .*\(6\.0 h\)$
+**66** exact, **2** late, **2** query errors (**0** Code 241)	single-soak/verdict.txt	^exact 66/70, lag misses 2, query errors 2 \(Code 241: 0\)$
+**8 scheduled, 8 applied**, 10 of 10 actions verified	single-soak/fault-audit.txt	^scheduled 8 \(.*\), applied 8 \(actions logged 10, verified 10\), skipped 0$
+**p50 5 s, p99 67 s**	single-soak/verdict.txt	^clean-cycle catch-up waits: p50 5 s, p99 67 s, max 67 s$
+**24 s over 6.2 h**	single-soak/verdict.txt	throttled 24 s over 6\.2 h \(0\.1% of wall time\)$
+29 scheduled, 28 applied, 1 skipped	soak/fault-audit-20h.txt	^scheduled 29 \(.*\), applied 28 \(actions logged 38, verified 32\), skipped 1$
