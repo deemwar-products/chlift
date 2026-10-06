@@ -7,7 +7,7 @@ import collections, json, os, re, statistics, subprocess, sys
 from datetime import datetime, timedelta, timezone
 
 res, project = sys.argv[1], sys.argv[2]
-mlog = sys.argv[3] if len(sys.argv) > 3 else os.path.expanduser("~/.config/herdr-mover/measure.log")
+mlog = sys.argv[3] if len(sys.argv) > 3 else os.environ.get("MEASURE_LOG", os.path.join(os.path.dirname(os.path.abspath(__file__)), "measure.log"))
 here = os.path.dirname(os.path.abspath(__file__))
 UTC = timezone.utc
 pt = lambda s: datetime.strptime(s[:19], "%Y-%m-%dT%H:%M:%S").replace(tzinfo=UTC)

@@ -125,7 +125,7 @@ Against Postgres:
 ## Confirm run (2026-10-04 to 05)
 
 **Question:** is 2 cores' worth of CPU per mirror enough for chlift's layout? The README had published that figure as
-derived from the soak, not tested. Raw data, the scripts, and herdrmove's per-minute host log are in [`confirm/`](confirm/):
+derived from the soak, not tested. Raw data, the scripts, and the host monitor's per-minute log are in [`confirm/`](confirm/):
 - `python3 confirm/confirm_tally.py confirm` prints `confirm/verdict.txt`;
 - `python3 confirm/finalize.py confirm` applies the criteria, which were fixed before the result: `confirm/criteria.txt`.
 

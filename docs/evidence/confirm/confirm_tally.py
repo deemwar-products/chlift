@@ -2,7 +2,7 @@
 """Tally the chlift confirm run (one layout) and the host conditions beside it.
 Usage: confirm_tally.py RESULTS_DIR [MEASURE_LOG]
 - RESULTS_DIR: checks.ndjson + chaos.log written by the soak runner/chaos.sh.
-- MEASURE_LOG: herdrmove's per-minute log (CEST timestamps): load, agent CPU pressure, measure.slice throttling.
+- MEASURE_LOG: the host monitor's per-minute log (CEST timestamps): load, agent CPU pressure, measure.slice throttling.
 Integrity rule (same as the main soak): every cycle with a mismatch must be followed by a cycle in which every check
 matches exactly. Freshness is reported, not graded."""
 import collections, json, os, re, statistics, sys
