@@ -76,7 +76,7 @@ func cmdInit(args []string) error {
 	fs := flag.NewFlagSet("init", flag.ExitOnError)
 	path := fs.String("config", "chlift.yaml", "config file to write")
 	name := fs.String("cluster", "chlift", "cluster name")
-	chv := fs.String("clickhouse-version", "26.3", "ClickHouse LTS line")
+	chv := fs.String("clickhouse-version", "26.3.39.7", "ClickHouse build to pin (the one v1.0.0 was soaked on), or an LTS line such as 26.3 for its newest build")
 	user := fs.String("ssh-user", "root", "SSH user (non-root uses sudo -n)")
 	port := fs.Int("ssh-port", 22, "SSH port")
 	key := fs.String("ssh-key", "", "SSH private key (default: ssh-agent)")
