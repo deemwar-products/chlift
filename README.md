@@ -1,20 +1,25 @@
 # chlift
 
-> **Replication soak: passed.** 20.4 hours of injected failures (28 replica, worker and Keeper faults), no lost or corrupted
-> rows. Replicated targets in the layout chlift creates are no longer preview. Where ClickHouse lagged and why, and the
-> hardware it needs: [soak results](docs/evidence/numbers.md#replication-soak-2026-10-03-to-04).
+> **v1.0.0 covers one server:** Postgres → one ClickHouse (with its Keeper) → PeerDB. Gate: one 6-hour fault soak,
+> passed: 8 injected faults, no lost or corrupted rows, 0 freshness misses outside the faults
+> ([single-server soak](docs/evidence/numbers.md#single-server-fault-soak)).
+> **Replicated clusters (2+ replicas) are not part of 1.0:**
+> - a 20.4 h soak and a 6 h confirm run, both with injected faults, lost no rows;
+> - CPU sizing per mirror isn't confirmed yet ([replication soak](docs/evidence/numbers.md#replication-soak-2026-10-03-to-04),
+>   [confirm run](docs/evidence/numbers.md#confirm-run-2026-10-04-to-05)).
 
-**Move your Postgres event tables into a self-hosted, replicated ClickHouse cluster, and prove nothing was lost.**
+**Move your Postgres event tables into a self-hosted ClickHouse, and prove nothing was lost.**
 
 chlift is for teams running their own Postgres whose events tables (user activity, request logs, audit trails) have
 grown to tens of GB, and whose analytics queries now take seconds to minutes. It does three things:
 
-1. **Installs a ClickHouse cluster over SSH:** two or more replicas, a 3-member Keeper, PeerDB for change data capture,
-   and a SeaweedFS staging store. Plain Linux hosts, no Kubernetes, no cloud service.
+1. **Installs ClickHouse over SSH:** one server (1.0), or two or more replicas with a 3-member Keeper (outside the 1.0
+   guarantee). It also installs PeerDB for change data capture and a SeaweedFS staging store. Plain Linux hosts, no
+   Kubernetes, no cloud service.
 2. **Plans and runs the migration:** it picks the event tables, proposes sort keys and partitions, applies the Postgres
    settings that keep the copy correct, then runs a snapshot plus live CDC.
-3. **Proves the copy:** it compares row counts for every day and column checksums over primary-key ranges, on **every
-   replica**, before you cut over.
+3. **Proves the copy:** it compares row counts for every day and column checksums over primary-key ranges, on every
+   ClickHouse server, before you cut over.
 
 chlift is free and MIT licensed. The only paid offers are installation, support and training: io@deemwar.com.
 
