@@ -5,6 +5,7 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"regexp"
 	"slices"
 	"strings"
 
@@ -147,6 +148,8 @@ func propose(t pgTable, minRows int64, explicit bool) (Table, string) {
 	mutated := t.upd+t.del > 0
 	if !explicit {
 		switch {
+		case timeCol == "" && rewrittenTime(t.cols) != "":
+			return Table{}, "only " + rewrittenTime(t.cols) + ", which updates rewrite: not an event table (name it with --tables to migrate anyway; it then sorts by primary key)"
 		case timeCol == "":
 			return Table{}, "no timestamp column: not an event table (name it with --tables to migrate anyway)"
 		case t.rows < minRows:
@@ -192,18 +195,36 @@ func pick(cols []column, names []string, ok func(typ string) bool) string {
 	return ""
 }
 
-// pickTime prefers well-known event-time names, else the first timestamp column.
+// pickTime prefers well-known event-time names, else the first timestamp column that is not rewritten by updates.
+// A column such as updated_at must never lead the sort key: ReplacingMergeTree folds rows by the whole key, so an
+// UPDATE that changes it leaves the old row live in ClickHouse. The mutated check can't be relied on for this
+// (Postgres's update counters are zero on a fresh table, after a stats reset or a crash, and on a new replica).
 func pickTime(cols []column) string {
 	if n := pick(cols, timeNames, isTime); n != "" {
 		return n
 	}
 	for _, c := range cols {
-		if isTime(c.typ) {
+		if isTime(c.typ) && !rewrittenOnUpdate(c.name) {
 			return c.name
 		}
 	}
 	return ""
 }
+
+var rewrittenRe = regexp.MustCompile(`(^|_)(updated|modified|changed|edited|synced|touched|refreshed|deleted)(_|$)|^last_|_last$`)
+
+// rewrittenTime returns the first timestamp column that updates rewrite, or "".
+func rewrittenTime(cols []column) string {
+	for _, c := range cols {
+		if isTime(c.typ) && rewrittenOnUpdate(c.name) {
+			return c.name
+		}
+	}
+	return ""
+}
+
+// rewrittenOnUpdate says a timestamp column's name marks it as changed by updates (updated_at, last_seen_at, ...).
+func rewrittenOnUpdate(name string) bool { return rewrittenRe.MatchString(strings.ToLower(name)) }
 
 func isTime(typ string) bool {
 	return strings.HasPrefix(typ, "timestamp") || typ == "date"

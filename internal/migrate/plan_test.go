@@ -2,6 +2,7 @@ package migrate
 
 import (
 	"slices"
+	"strings"
 	"testing"
 )
 
@@ -67,5 +68,39 @@ func TestTimeFirstKeyNeedsFullIdentity(t *testing.T) {
 	tm, _ = propose(e, 1, false)
 	if needsFullIdentity(e, tm) != "" {
 		t.Error("PK-first key on a table without TOAST-able columns needs no full identity")
+	}
+}
+
+// Found in the 1.0.0 -> 1.0.1 upgrade test: a users table with zero update counters (freshly loaded) got
+// ORDER BY (account_id, updated_at, id); every UPDATE then left the old row live in ClickHouse.
+func TestUpdatedAtNeverLeadsTheSortKey(t *testing.T) {
+	users := pgTable{schema: "public", name: "users", rows: 200_000, ins: 200_000, pk: []string{"id"}, replIdent: "d",
+		cols: []column{{"id", "bigint", "p"}, {"account_id", "bigint", "p"}, {"email", "text", "x"},
+			{"updated_at", "timestamp with time zone", "p"}}}
+	if _, r := propose(users, 100_000, false); !strings.Contains(r, "only updated_at, which updates rewrite") {
+		t.Errorf("auto-plan must skip it and say why, got %q", r)
+	}
+	tm, r := propose(users, 100_000, true)
+	if r != "" {
+		t.Fatal(r)
+	}
+	if !slices.Equal(tm.OrderBy, []string{"id"}) || tm.PartitionBy != "" {
+		t.Errorf("named explicitly, it must sort by primary key only: order_by %v partition %q", tm.OrderBy, tm.PartitionBy)
+	}
+}
+
+func TestPickTimeSkipsRewrittenColumns(t *testing.T) {
+	for name, want := range map[string]bool{
+		"updated_at": true, "modified_at": true, "last_seen_at": true, "date_last": true, "row_updated": true,
+		"deleted_at": true, "created_at": false, "event_time": false, "logged_at": false, "update_count_at": false,
+	} {
+		if got := rewrittenOnUpdate(name); got != want {
+			t.Errorf("%s: rewrittenOnUpdate=%v, want %v", name, got, want)
+		}
+	}
+	// A real event time still wins over an updated_at that comes first.
+	cols := []column{{"updated_at", "timestamp", "p"}, {"occurred", "timestamp", "p"}}
+	if got := pickTime(cols); got != "occurred" {
+		t.Errorf("pickTime = %q, want occurred", got)
 	}
 }
