@@ -238,7 +238,9 @@ fi
 rpm -q gpg-pubkey --qf '%%{SUMMARY}\n' | grep -qi clickhouse || rpm --import https://packages.clickhouse.com/rpm/stable/repodata/repomd.xml.key
 V=%[2]s
 C=same
-if [ "$(rpm -q --qf '%%{VERSION}' %[1]s 2>/dev/null || true)" != "$V" ]; then
+# $V is VERSION-RELEASE from the resolver (26.3.39.7-1) or a bare VERSION from clickhouse_build; match either.
+CUR=$(rpm -q --qf '%%{VERSION}-%%{RELEASE}' %[1]s 2>/dev/null || true)
+if [ "$CUR" != "$V" ] && [ "${CUR%%%%-*}" != "$V" ]; then
   C=changed
   yum install -y -q %[3]s >/dev/null
 fi
