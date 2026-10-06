@@ -13,4 +13,4 @@ sed -n 's/^\s*image: //p' internal/peerdb/templates/compose.yml | sort -u | whil
   d=$(docker buildx imagetools inspect "$img" --format '{{json .Manifest.Digest}}' 2>/dev/null | tr -d '"') || d="LOOKUP FAILED"
   echo "| ${img%%:*} | container image | ${img#*:} | ${d:-LOOKUP FAILED} |"
 done
-echo "| ClickHouse server + Keeper | packages.clickhouse.com (deb/rpm) | the clickhouse_version in chlift.yaml: an LTS line resolves its newest build at install; an exact build pins it | n/a (OS packages) |"
+echo "| ClickHouse server + Keeper | packages.clickhouse.com (deb/rpm) | clickhouse_version in chlift.yaml names an LTS line, which resolves its newest build at install; clickhouse_build pins one exact build on every host | n/a (OS packages) |"

@@ -7,4 +7,4 @@
 | postgres | container image | 18-alpine | sha256:77f585114c32fbca283dc835b0596f4e52b51b4c6662d7810b2f4084f60a1873 |
 | temporalio/admin-tools | container image | 1.25.2-tctl-1.18.1-cli-1.1.1 | sha256:da0c7a7982b571857173ab8f058e7f139b3054800abb4dcb100445d29a563ee8 |
 | temporalio/auto-setup | container image | 1.29 | sha256:f14912b699cf73015ad5c4fc18d522d4b014db90e794039214dfb7c022c2644f |
-| ClickHouse server + Keeper | packages.clickhouse.com (deb/rpm) | the clickhouse_version in chlift.yaml: an LTS line resolves its newest build at install; an exact build pins it | n/a (OS packages) |
+| ClickHouse server + Keeper | packages.clickhouse.com (deb/rpm) | clickhouse_version in chlift.yaml names an LTS line, which resolves its newest build at install; clickhouse_build pins one exact build on every host | n/a (OS packages) |
