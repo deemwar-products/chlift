@@ -13,8 +13,10 @@ import (
 
 // Bucket checksums compare column sums per primary-key range in Postgres and on each replica.
 // They are not cryptographic: they catch missing or extra rows, changed numbers and timestamps, and
-// emptied text (the TOAST failure), without moving rows out of either database. JSON and floats are
-// skipped: their text and rounding legitimately differ between the stores.
+// emptied or truncated text or JSON (the TOAST failure), without moving rows out of either database. Text and
+// JSON are compared by byte length (JSON with all whitespace removed: Postgres prints {"a": 1}, ClickHouse
+// holds {"a":1}), so an edit that keeps a value's length is not caught.
+// Floats are skipped: their rounding legitimately differs between the stores.
 const buckets = 64
 
 type sumCol struct{ pg, ch, name string }
@@ -34,20 +36,31 @@ func checksumCols(ctx context.Context, conn *pgx.Conn, t Table) ([]sumCol, error
 		if err := rows.Scan(&n, &typ); err != nil {
 			return nil, err
 		}
-		pq, cq := quoteIdent(n), "`"+n+"`"
-		switch {
-		case typ == "smallint" || typ == "integer" || typ == "bigint":
-			cols = append(cols, sumCol{"coalesce(sum(" + pq + "),0)::numeric", "sum(toInt128(" + cq + "))", n})
-		case typ == "boolean":
-			cols = append(cols, sumCol{"count(*) FILTER (WHERE " + pq + ")", "countIf(" + cq + ")", n})
-		case strings.HasPrefix(typ, "timestamp") || typ == "date":
-			cols = append(cols, sumCol{"coalesce(sum(floor(extract(epoch FROM " + pq + "))::bigint),0)::numeric",
-				"sum(toInt128(toUnixTimestamp(" + cq + ")))", n})
-		case typ == "text" || strings.HasPrefix(typ, "character"):
-			cols = append(cols, sumCol{"coalesce(sum(octet_length(" + pq + ")),0)::numeric", "sum(toInt128(length(" + cq + ")))", n})
+		if c, ok := sumColFor(n, typ); ok {
+			cols = append(cols, c)
 		}
 	}
 	return cols, rows.Err()
+}
+
+// sumColFor maps one Postgres column type to comparable Postgres and ClickHouse aggregates (false: not compared).
+func sumColFor(n, typ string) (sumCol, bool) {
+	pq, cq := quoteIdent(n), "`"+n+"`"
+	switch {
+	case typ == "smallint" || typ == "integer" || typ == "bigint":
+		return sumCol{"coalesce(sum(" + pq + "),0)::numeric", "sum(toInt128(" + cq + "))", n}, true
+	case typ == "boolean":
+		return sumCol{"count(*) FILTER (WHERE " + pq + ")", "countIf(" + cq + ")", n}, true
+	case strings.HasPrefix(typ, "timestamp") || typ == "date":
+		return sumCol{"coalesce(sum(floor(extract(epoch FROM " + pq + "))::bigint),0)::numeric",
+			"sum(toInt128(toUnixTimestamp(" + cq + ")))", n}, true
+	case typ == "json" || typ == "jsonb":
+		return sumCol{"coalesce(sum(octet_length(regexp_replace(" + pq + "::text, '\\s', '', 'g'))),0)::numeric",
+			"sum(toInt128(length(replaceRegexpAll(toString(" + cq + "), '\\\\s', ''))))", n}, true
+	case typ == "text" || strings.HasPrefix(typ, "character"):
+		return sumCol{"coalesce(sum(octet_length(" + pq + ")),0)::numeric", "sum(toInt128(length(" + cq + ")))", n}, true
+	}
+	return sumCol{}, false
 }
 
 // Checksums compares per-bucket sums for tables with a single integer primary key.

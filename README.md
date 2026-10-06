@@ -35,6 +35,11 @@ pipeline reports success and prints no error:
 
 Both were reproduced and caught by `chlift migrate check`; see the recording `07-corruption-repro` in
 [`docs/evidence/`](docs/evidence/).
+`migrate check --checksums` compares, per primary-key range, the row count and the sums of integer, boolean,
+date/time and text columns (text by byte length) and of JSON columns (by byte length with whitespace removed, since
+Postgres prints `{"a": 1}` and ClickHouse holds `{"a":1}`). So it catches emptied or truncated text and JSON, but not
+an edit that keeps a value's length. Floating-point columns are not compared: their rounding differs between the
+stores.
 
 ## Quick start
 
