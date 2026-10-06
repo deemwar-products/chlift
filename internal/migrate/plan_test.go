@@ -104,3 +104,18 @@ func TestPickTimeSkipsRewrittenColumns(t *testing.T) {
 		t.Errorf("pickTime = %q, want occurred", got)
 	}
 }
+
+// Tested 10-07: moving 500 request_logs rows to another account left 500 duplicates (migrate check failed on it).
+// The tenant-first key is kept for per-tenant query speed, so the plan must say so.
+func TestTenantFirstKeyWarnsAboutTenantMoves(t *testing.T) {
+	tm, _ := propose(events(), 100_000, false)
+	found := false
+	for _, n := range tm.Notes {
+		if strings.Contains(n, "changes a row's tenant_id leaves the old row live") {
+			found = true
+		}
+	}
+	if !found {
+		t.Errorf("tenant-first key without the tenant-move warning: %v", tm.Notes)
+	}
+}

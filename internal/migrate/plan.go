@@ -169,6 +169,8 @@ func propose(t pgTable, minRows int64, explicit bool) (Table, string) {
 	if !mutated && timeCol != "" {
 		if tenant := pick(t.cols, tenantNames, func(string) bool { return true }); tenant != "" && !slices.Contains(t.pk, tenant) {
 			tm.OrderBy = append(tm.OrderBy, tenant)
+			tm.Notes = append(tm.Notes, "sorted by "+tenant+" first: an UPDATE that changes a row's "+tenant+
+				" leaves the old row live in ClickHouse (migrate check reports it); don't migrate tables whose rows move between "+tenant+"s")
 		}
 		if !slices.Contains(t.pk, timeCol) {
 			tm.OrderBy = append(tm.OrderBy, timeCol)
